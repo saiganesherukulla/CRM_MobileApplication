@@ -34,7 +34,7 @@ class CrmApi {
     'Lead Assignment',
     'Initial Contact',
     'Requirement Discovery',
-    'Deal / Opportunity Creation',
+
     'Proposal / Quotation',
     'Negotiation & Revision',
     'Approval Decision',
@@ -273,6 +273,8 @@ class CrmApi {
     );
   }
 
+
+
   Future<List<CrmTask>> tasks() async {
     return _request<List<CrmTask>>(
       '/tasks',
@@ -432,10 +434,12 @@ class CrmApi {
         );
       }
     }
-    final decoded =
-        response.body.isEmpty ? null : jsonDecode(response.body) as dynamic;
-    final envelope =
-        decoded is Map && decoded.containsKey('success') ? _map(decoded) : null;
+    final decoded = response.body.isEmpty
+        ? null
+        : jsonDecode(response.body) as dynamic;
+    final envelope = decoded is Map && decoded.containsKey('success')
+        ? _map(decoded)
+        : null;
     final success = envelope == null
         ? response.statusCode < 400
         : envelope['success'] == true;
@@ -447,7 +451,8 @@ class CrmApi {
       throw ApiException(message, response.statusCode);
     }
     return Project.fromJson(
-        _map(envelope == null ? decoded : envelope['data']));
+      _map(envelope == null ? decoded : envelope['data']),
+    );
   }
 
   Future<Project> deleteProjectMilestoneDocument(
@@ -708,17 +713,15 @@ class CrmApi {
     if (response.statusCode == 401 && refreshOnUnauthorized) {
       final refreshed = await _refreshSession();
       if (refreshed) {
-        return uploadWorkflowDocument(
-          id,
-          file,
-          refreshOnUnauthorized: false,
-        );
+        return uploadWorkflowDocument(id, file, refreshOnUnauthorized: false);
       }
     }
-    final decoded =
-        response.body.isEmpty ? null : jsonDecode(response.body) as dynamic;
-    final envelope =
-        decoded is Map && decoded.containsKey('success') ? _map(decoded) : null;
+    final decoded = response.body.isEmpty
+        ? null
+        : jsonDecode(response.body) as dynamic;
+    final envelope = decoded is Map && decoded.containsKey('success')
+        ? _map(decoded)
+        : null;
     final success = envelope == null
         ? response.statusCode < 400
         : envelope['success'] == true;
@@ -863,10 +866,12 @@ class CrmApi {
       }
     }
 
-    final decoded =
-        response.body.isEmpty ? null : jsonDecode(response.body) as dynamic;
-    final envelope =
-        decoded is Map && decoded.containsKey('success') ? _map(decoded) : null;
+    final decoded = response.body.isEmpty
+        ? null
+        : jsonDecode(response.body) as dynamic;
+    final envelope = decoded is Map && decoded.containsKey('success')
+        ? _map(decoded)
+        : null;
     final success = envelope == null
         ? response.statusCode < 400
         : envelope['success'] == true;
@@ -939,7 +944,8 @@ class CrmApi {
           payload['primaryContactEmail'] ?? payload['contactEmail'],
       'primaryContactPhone':
           payload['primaryContactPhone'] ?? payload['contactPhone'],
-      'primaryContactDesignation': payload['primaryContactDesignation'] ??
+      'primaryContactDesignation':
+          payload['primaryContactDesignation'] ??
           payload['contactDesignation'] ??
           'Primary Contact',
     };
@@ -977,6 +983,7 @@ class CrmApi {
           'dashboard',
           'leads',
           'clients',
+          'opportunities',
           'tasks',
           'projects',
           'emails',
@@ -990,6 +997,7 @@ class CrmApi {
           'dashboard',
           'leads',
           'clients',
+          'opportunities',
           'tasks',
           'projects',
           'emails',
@@ -1020,6 +1028,7 @@ class CrmApi {
     if (route.startsWith('/more')) return 'more';
     if (route.startsWith('/leads')) return 'leads';
     if (route.startsWith('/clients')) return 'clients';
+    if (route.startsWith('/opportunities')) return 'opportunities';
     if (route.startsWith('/tasks')) return 'tasks';
     if (route.startsWith('/projects')) return 'projects';
     if (route.startsWith('/emails')) return 'emails';

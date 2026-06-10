@@ -55,17 +55,15 @@ class _LeadsScreenState extends State<LeadsScreen> {
     if (changed == true) _reload();
   }
 
-  Future<void> _showLeadDetails(
-    Lead lead,
-    Set<String> liveClientIds,
-  ) async {
+  Future<void> _showLeadDetails(Lead lead, Set<String> liveClientIds) async {
     await showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (_) => _LeadDetailsSheet(
         lead: lead,
-        hasLiveClient: lead.status == 'Converted' &&
+        hasLiveClient:
+            lead.status == 'Converted' &&
             lead.convertedClientId.isNotEmpty &&
             liveClientIds.contains(lead.convertedClientId),
         onEdit: () async {
@@ -109,9 +107,9 @@ class _LeadsScreenState extends State<LeadsScreen> {
       _reload();
     } catch (error) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(error.toString())),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(error.toString())));
     }
   }
 
@@ -154,8 +152,9 @@ class _LeadsScreenState extends State<LeadsScreen> {
                   return ApiErrorView(error: snapshot.error, onRetry: _reload);
                 }
                 final data = snapshot.data ?? _LeadData.empty();
-                final liveClientIds =
-                    data.clients.map((client) => client.id).toSet();
+                final liveClientIds = data.clients
+                    .map((client) => client.id)
+                    .toSet();
                 final query = _search.toLowerCase();
                 final leads = data.leads.where((lead) {
                   final text =
@@ -178,8 +177,9 @@ class _LeadsScreenState extends State<LeadsScreen> {
                           border: Border.all(color: AppColors.surfaceBorder),
                         ),
                         child: DataTable(
-                          headingRowColor:
-                              WidgetStateProperty.all(AppColors.slate50),
+                          headingRowColor: WidgetStateProperty.all(
+                            AppColors.slate50,
+                          ),
                           columnSpacing: 22,
                           dataRowMinHeight: 68,
                           dataRowMaxHeight: 86,
@@ -187,6 +187,7 @@ class _LeadsScreenState extends State<LeadsScreen> {
                             DataColumn(label: Text('Company')),
                             DataColumn(label: Text('Industry')),
                             DataColumn(label: Text('Country')),
+                            DataColumn(label: Text('Source')),
                             DataColumn(label: Text('Website')),
                             DataColumn(label: Text('Status')),
                             DataColumn(label: Text('Contact Name')),
@@ -195,15 +196,22 @@ class _LeadsScreenState extends State<LeadsScreen> {
                             DataColumn(label: Text('Actions')),
                           ],
                           rows: leads.map((lead) {
-                            final hasLiveClient = lead.status == 'Converted' &&
+                            final hasLiveClient =
+                                lead.status == 'Converted' &&
                                 lead.convertedClientId.isNotEmpty &&
                                 liveClientIds.contains(lead.convertedClientId);
                             return DataRow(
                               cells: [
-                                DataCell(_cell(lead.name,
-                                    width: 180, subtitle: lead.id)),
+                                DataCell(
+                                  _cell(
+                                    lead.name,
+                                    width: 180,
+                                    subtitle: lead.id,
+                                  ),
+                                ),
                                 DataCell(_cell(lead.industry)),
                                 DataCell(_cell(lead.country)),
+                                DataCell(_cell(lead.source)),
                                 DataCell(_cell(lead.website, width: 190)),
                                 DataCell(CrmBadge(lead.status)),
                                 DataCell(_cell(lead.contactName)),
@@ -215,10 +223,13 @@ class _LeadsScreenState extends State<LeadsScreen> {
                                     children: [
                                       OutlinedButton.icon(
                                         onPressed: () => _showLeadDetails(
-                                            lead, liveClientIds),
+                                          lead,
+                                          liveClientIds,
+                                        ),
                                         icon: const Icon(
-                                            Icons.visibility_outlined,
-                                            size: 16),
+                                          Icons.visibility_outlined,
+                                          size: 16,
+                                        ),
                                         label: const Text('View'),
                                       ),
                                       const SizedBox(width: 8),
@@ -226,24 +237,29 @@ class _LeadsScreenState extends State<LeadsScreen> {
                                         onPressed: lead.contactEmail.isEmpty
                                             ? null
                                             : () => _showLeadEmailSheet(lead),
-                                        icon: const Icon(Icons.mail_outline,
-                                            size: 16),
+                                        icon: const Icon(
+                                          Icons.mail_outline,
+                                          size: 16,
+                                        ),
                                         label: const Text('Email'),
                                       ),
                                       const SizedBox(width: 8),
                                       if (hasLiveClient)
                                         TextButton(
                                           onPressed: () => context.go(
-                                              '/clients/${lead.convertedClientId}'),
+                                            '/clients/${lead.convertedClientId}',
+                                          ),
                                           child: const Text('Client'),
                                         )
                                       else
                                         ElevatedButton.icon(
-                                          onPressed: () => context
-                                              .go('/clients?leadId=${lead.id}'),
+                                          onPressed: () => context.go(
+                                            '/clients?leadId=${lead.id}',
+                                          ),
                                           icon: const Icon(
-                                              Icons.arrow_forward_rounded,
-                                              size: 16),
+                                            Icons.arrow_forward_rounded,
+                                            size: 16,
+                                          ),
                                           label: const Text('Convert'),
                                         ),
                                     ],
@@ -359,6 +375,15 @@ class _LeadDetailsSheet extends StatelessWidget {
                 _detail('Contact Phone', lead.contactPhone),
                 _detail('Designation', lead.contactDesignation),
                 _detail('Lead Owner', lead.owner),
+                _detail('Source', lead.source),
+
+                _detail(
+                  'Duplicate Leads',
+                  lead.duplicateLeadIds.isEmpty
+                      ? 'No duplicate candidates'
+                      : lead.duplicateLeadIds.join(', '),
+                  wide: true,
+                ),
                 _detail(
                   'Converted Client',
                   lead.convertedClientId.isEmpty
@@ -438,8 +463,9 @@ class _LeadDetailsSheet extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
-                  color:
-                      display == '-' ? AppColors.slate400 : AppColors.slate700,
+                  color: display == '-'
+                      ? AppColors.slate400
+                      : AppColors.slate700,
                 ),
               ),
             ],
@@ -590,10 +616,7 @@ class _LeadData {
   final List<Lead> leads;
   final List<Client> clients;
 
-  const _LeadData({
-    required this.leads,
-    required this.clients,
-  });
+  const _LeadData({required this.leads, required this.clients});
 
   factory _LeadData.empty() =>
       const _LeadData(leads: <Lead>[], clients: <Client>[]);
@@ -614,6 +637,7 @@ class _LeadSheetState extends State<_LeadSheet> {
   late final TextEditingController _country;
   late final TextEditingController _website;
   late final TextEditingController _owner;
+  late final TextEditingController _source;
   late final TextEditingController _contactName;
   late final TextEditingController _contactEmail;
   late final TextEditingController _contactPhone;
@@ -632,6 +656,7 @@ class _LeadSheetState extends State<_LeadSheet> {
     _country = TextEditingController(text: lead?.country);
     _website = TextEditingController(text: lead?.website);
     _owner = TextEditingController(text: lead?.owner);
+    _source = TextEditingController(text: lead?.source);
     _contactName = TextEditingController(text: lead?.contactName);
     _contactEmail = TextEditingController(text: lead?.contactEmail);
     _contactPhone = TextEditingController(text: lead?.contactPhone);
@@ -648,6 +673,7 @@ class _LeadSheetState extends State<_LeadSheet> {
       _country,
       _website,
       _owner,
+      _source,
       _contactName,
       _contactEmail,
       _contactPhone,
@@ -674,6 +700,7 @@ class _LeadSheetState extends State<_LeadSheet> {
       'country': _country.text.trim(),
       'website': _website.text.trim(),
       'owner': _owner.text.trim(),
+      'source': _source.text.trim(),
       'status': _status,
       'contactName': _contactName.text.trim(),
       'contactEmail': _contactEmail.text.trim(),
@@ -709,23 +736,28 @@ class _LeadSheetState extends State<_LeadSheet> {
           controller: scroll,
           padding: const EdgeInsets.all(20),
           children: [
-            Text(widget.lead == null ? 'Add New Lead' : 'Edit Lead',
-                style: const TextStyle(
-                    fontSize: 17,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.slate800)),
+            Text(
+              widget.lead == null ? 'Add New Lead' : 'Edit Lead',
+              style: const TextStyle(
+                fontSize: 17,
+                fontWeight: FontWeight.w700,
+                color: AppColors.slate800,
+              ),
+            ),
             const SizedBox(height: 16),
             _field(_name, 'Company Name'),
             _field(_industry, 'Industry'),
             _field(_country, 'Country'),
             _field(_website, 'Website'),
             _field(_owner, 'Lead Owner'),
+            _field(_source, 'Source'),
             DropdownButtonFormField<String>(
               value: _status,
               decoration: const InputDecoration(labelText: 'Status'),
               items: ['New', 'Contacted', 'Qualified', 'Converted', 'Lost']
-                  .map((item) =>
-                      DropdownMenuItem(value: item, child: Text(item)))
+                  .map(
+                    (item) => DropdownMenuItem(value: item, child: Text(item)),
+                  )
                   .toList(),
               onChanged: (value) => setState(() => _status = value ?? _status),
             ),
@@ -741,8 +773,10 @@ class _LeadSheetState extends State<_LeadSheet> {
             ),
             if (_error != null) ...[
               const SizedBox(height: 10),
-              Text(_error!,
-                  style: const TextStyle(color: AppColors.error, fontSize: 12)),
+              Text(
+                _error!,
+                style: const TextStyle(color: AppColors.error, fontSize: 12),
+              ),
             ],
             const SizedBox(height: 20),
             ElevatedButton(

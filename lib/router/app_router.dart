@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import '../screens/auth/login_screen.dart';
 import '../screens/dashboard/dashboard_screen.dart';
 import '../screens/leads/leads_screen.dart';
+
 import '../screens/clients/clients_screen.dart';
 import '../screens/clients/client_detail_screen.dart';
 import '../screens/tasks/tasks_screen.dart';
@@ -26,10 +27,8 @@ final appRouter = GoRouter(
       pageBuilder: (context, state) => _fade(state, const LoginScreen()),
     ),
     ShellRoute(
-      builder: (context, state, child) => AppShell(
-        selectedIndex: _selectedIndex(state.uri.path),
-        child: child,
-      ),
+      builder: (context, state, child) =>
+          AppShell(selectedIndex: _selectedIndex(state.uri.path), child: child),
       routes: [
         GoRoute(
           path: '/dashboard',
@@ -53,6 +52,7 @@ final appRouter = GoRouter(
             ),
           ],
         ),
+
         GoRoute(
           path: '/tasks',
           pageBuilder: (context, state) => _slide(state, const TasksScreen()),
@@ -127,10 +127,10 @@ CustomTransitionPage<void> _slide<T>(GoRouterState state, Widget child) {
     child: child,
     transitionDuration: const Duration(milliseconds: 220),
     transitionsBuilder: (_, animation, __, child) => SlideTransition(
-      position:
-          Tween<Offset>(begin: const Offset(0.04, 0), end: Offset.zero).animate(
-        CurvedAnimation(parent: animation, curve: Curves.easeOut),
-      ),
+      position: Tween<Offset>(
+        begin: const Offset(0.04, 0),
+        end: Offset.zero,
+      ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOut)),
       child: FadeTransition(opacity: animation, child: child),
     ),
   );

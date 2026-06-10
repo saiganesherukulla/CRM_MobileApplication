@@ -12,6 +12,9 @@ class Lead {
   final String contactEmail;
   final String contactPhone;
   final String contactDesignation;
+  final String source;
+
+  final List<String> duplicateLeadIds;
   final String notes;
   final String convertedClientId;
   final String createdAt;
@@ -29,6 +32,9 @@ class Lead {
     required this.contactEmail,
     required this.contactPhone,
     required this.contactDesignation,
+    required this.source,
+
+    required this.duplicateLeadIds,
     required this.notes,
     required this.convertedClientId,
     required this.createdAt,
@@ -48,6 +54,9 @@ class Lead {
       contactEmail: _string(json['contactEmail']),
       contactPhone: _string(json['contactPhone']),
       contactDesignation: _string(json['contactDesignation']),
+      source: _string(json['source']),
+
+      duplicateLeadIds: _stringList(json['duplicateLeadIds']),
       notes: _string(json['notes']),
       convertedClientId: _string(json['convertedClientId']),
       createdAt: _string(json['createdAt']),

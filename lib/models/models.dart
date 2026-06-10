@@ -9,6 +9,7 @@ part 'email_provider_info.dart';
 part 'email_sync_result.dart';
 part 'email_message.dart';
 part 'lead.dart';
+
 part 'project.dart';
 part 'role_info.dart';
 part 'team_member.dart';

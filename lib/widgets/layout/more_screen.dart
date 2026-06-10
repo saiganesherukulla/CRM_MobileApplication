@@ -7,6 +7,7 @@ class MoreScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final modules = [
       _Module('Emails', Icons.mail_rounded, '/emails', AppColors.primaryLight),
+
       _Module(
         'Tickets',
         Icons.confirmation_number_rounded,
