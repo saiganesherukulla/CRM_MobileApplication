@@ -7,14 +7,24 @@ class MoreScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final modules = [
       _Module('Emails', Icons.mail_rounded, '/emails', AppColors.primaryLight),
-      _Module('CRM Flow', Icons.account_tree_rounded, '/workflows',
-          const Color(0xFF8B5CF6)),
-      _Module('Tickets', Icons.confirmation_number_rounded, '/tickets',
-          AppColors.warning),
       _Module(
-          'Reports', Icons.bar_chart_rounded, '/reports', AppColors.success),
+        'Tickets',
+        Icons.confirmation_number_rounded,
+        '/tickets',
+        AppColors.warning,
+      ),
       _Module(
-          'Settings', Icons.settings_rounded, '/settings', AppColors.slate500),
+        'Reports',
+        Icons.bar_chart_rounded,
+        '/reports',
+        AppColors.success,
+      ),
+      _Module(
+        'Settings',
+        Icons.settings_rounded,
+        '/settings',
+        AppColors.slate500,
+      ),
     ].where((module) => CrmApi.instance.canAccessRoute(module.route)).toList();
     final user = CrmApi.instance.currentUser;
 
@@ -35,28 +45,38 @@ class MoreScreen extends StatelessWidget {
                 children: [
                   CircleAvatar(
                     backgroundColor: AppColors.primary.withOpacity(0.1),
-                    child: Text(user.avatar,
-                        style: const TextStyle(
-                            color: AppColors.primary,
-                            fontWeight: FontWeight.w800)),
+                    child: Text(
+                      user.avatar,
+                      style: const TextStyle(
+                        color: AppColors.primary,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(user.name,
-                            style: const TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w700,
-                                color: AppColors.slate800),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis),
-                        Text(user.role,
-                            style: const TextStyle(
-                                fontSize: 12, color: AppColors.slate400),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis),
+                        Text(
+                          user.name,
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.slate800,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        Text(
+                          user.role,
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: AppColors.slate400,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ],
                     ),
                   ),
@@ -65,16 +85,21 @@ class MoreScreen extends StatelessWidget {
             ),
             const SizedBox(height: 16),
           ],
-          const Text('Modules',
-              style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.slate400,
-                  letterSpacing: 0.8)),
+          const Text(
+            'Modules',
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: AppColors.slate400,
+              letterSpacing: 0.8,
+            ),
+          ),
           const SizedBox(height: 10),
           if (modules.isEmpty)
-            const Text('No extra modules are enabled for this role.',
-                style: TextStyle(color: AppColors.slate400))
+            const Text(
+              'No extra modules are enabled for this role.',
+              style: TextStyle(color: AppColors.slate400),
+            )
           else
             GridView.count(
               crossAxisCount: 3,

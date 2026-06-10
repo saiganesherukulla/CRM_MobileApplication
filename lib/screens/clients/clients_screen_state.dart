@@ -6,6 +6,7 @@ class _ClientsScreenState extends State<ClientsScreen> {
   String _industryFilter = 'All';
   String _countryFilter = 'All';
   bool _showMoreFilters = false;
+  String? _handledLeadId;
   final _searchCtrl = TextEditingController();
   late Future<List<Client>> _future;
 
@@ -13,6 +14,31 @@ class _ClientsScreenState extends State<ClientsScreen> {
   void initState() {
     super.initState();
     _future = CrmApi.instance.clients();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final leadId = GoRouterState.of(context).uri.queryParameters['leadId'];
+    if (leadId == null || leadId.isEmpty || leadId == _handledLeadId) return;
+    _handledLeadId = leadId;
+    WidgetsBinding.instance
+        .addPostFrameCallback((_) => _openLeadConversion(leadId));
+  }
+
+  Future<void> _openLeadConversion(String leadId) async {
+    try {
+      final lead = await CrmApi.instance.lead(leadId);
+      if (!mounted) return;
+      await _showAddClientSheet(lead);
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(error.toString())),
+      );
+    } finally {
+      if (mounted) context.go('/clients');
+    }
   }
 
   @override
@@ -62,7 +88,8 @@ class _ClientsScreenState extends State<ClientsScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.add_rounded, color: AppColors.primary),
-            onPressed: _showAddClientSheet,
+            onPressed:
+                CrmApi.instance.canCreateClients ? _showAddClientSheet : null,
           ),
         ],
       ),
@@ -78,16 +105,19 @@ class _ClientsScreenState extends State<ClientsScreen> {
                   onChanged: (value) => setState(() => _search = value),
                   decoration: const InputDecoration(
                     hintText: 'Search clients...',
-                    prefixIcon: Icon(Icons.search_rounded,
-                        size: 18, color: AppColors.slate400),
+                    prefixIcon: Icon(
+                      Icons.search_rounded,
+                      size: 18,
+                      color: AppColors.slate400,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 10),
                 SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
                   child: Row(
-                    children:
-                        ['All', 'Active', 'At Risk', 'Inactive'].map((status) {
+                    children: ['All', 'New', 'Active', 'At Risk', 'Inactive']
+                        .map((status) {
                       final selected = _statusFilter == status;
                       return Padding(
                         padding: const EdgeInsets.only(right: 8),
@@ -95,7 +125,9 @@ class _ClientsScreenState extends State<ClientsScreen> {
                           onTap: () => setState(() => _statusFilter = status),
                           child: Container(
                             padding: const EdgeInsets.symmetric(
-                                horizontal: 14, vertical: 7),
+                              horizontal: 14,
+                              vertical: 7,
+                            ),
                             decoration: BoxDecoration(
                               color: selected
                                   ? AppColors.primary
@@ -105,11 +137,12 @@ class _ClientsScreenState extends State<ClientsScreen> {
                             child: Text(
                               status,
                               style: TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w600,
-                                  color: selected
-                                      ? Colors.white
-                                      : AppColors.slate600),
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: selected
+                                    ? Colors.white
+                                    : AppColors.slate600,
+                              ),
                             ),
                           ),
                         ),
@@ -125,7 +158,8 @@ class _ClientsScreenState extends State<ClientsScreen> {
                         setState(() => _showMoreFilters = !_showMoreFilters),
                     icon: const Icon(Icons.filter_list_rounded, size: 18),
                     label: Text(
-                        _showMoreFilters ? 'Hide Filters' : 'More Filters'),
+                      _showMoreFilters ? 'Hide Filters' : 'More Filters',
+                    ),
                   ),
                 ),
               ],
@@ -143,8 +177,14 @@ class _ClientsScreenState extends State<ClientsScreen> {
                   return ApiErrorView(error: snapshot.error, onRetry: _reload);
                 }
                 final allClients = snapshot.data ?? const [];
-                final industryOptions = _options(allClients, (client) => client.industry);
-                final countryOptions = _options(allClients, (client) => client.country);
+                final industryOptions = _options(
+                  allClients,
+                  (client) => client.industry,
+                );
+                final countryOptions = _options(
+                  allClients,
+                  (client) => client.country,
+                );
                 if (!industryOptions.contains(_industryFilter)) {
                   _industryFilter = 'All';
                 }
@@ -161,8 +201,8 @@ class _ClientsScreenState extends State<ClientsScreen> {
                           country: _countryFilter,
                           industries: industryOptions,
                           countries: countryOptions,
-                          onIndustryChanged: (value) => setState(
-                              () => _industryFilter = value ?? 'All'),
+                          onIndustryChanged: (value) =>
+                              setState(() => _industryFilter = value ?? 'All'),
                           onCountryChanged: (value) =>
                               setState(() => _countryFilter = value ?? 'All'),
                           onClear: () => setState(() {
@@ -175,7 +215,8 @@ class _ClientsScreenState extends State<ClientsScreen> {
                         ),
                       const Expanded(
                         child: ApiEmpty(
-                            'No clients found. Add your first client to begin.'),
+                          'No clients found. Add your first client to begin.',
+                        ),
                       ),
                     ],
                   );
@@ -192,8 +233,8 @@ class _ClientsScreenState extends State<ClientsScreen> {
                           country: _countryFilter,
                           industries: industryOptions,
                           countries: countryOptions,
-                          onIndustryChanged: (value) => setState(
-                              () => _industryFilter = value ?? 'All'),
+                          onIndustryChanged: (value) =>
+                              setState(() => _industryFilter = value ?? 'All'),
                           onCountryChanged: (value) =>
                               setState(() => _countryFilter = value ?? 'All'),
                           onClear: () => setState(() {
@@ -206,10 +247,12 @@ class _ClientsScreenState extends State<ClientsScreen> {
                         ),
                         const SizedBox(height: 12),
                       ],
-                      ...clients.map((client) => Padding(
-                            padding: const EdgeInsets.only(bottom: 10),
-                            child: _ClientCard(client: client),
-                          )),
+                      ...clients.map(
+                        (client) => Padding(
+                          padding: const EdgeInsets.only(bottom: 10),
+                          child: _ClientCard(client: client),
+                        ),
+                      ),
                     ],
                   ),
                 );
@@ -221,12 +264,12 @@ class _ClientsScreenState extends State<ClientsScreen> {
     );
   }
 
-  Future<void> _showAddClientSheet() async {
+  Future<void> _showAddClientSheet([Lead? lead]) async {
     final created = await showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => const _AddClientSheet(),
+      builder: (_) => _AddClientSheet(lead: lead),
     );
     if (created == true) _reload();
   }

@@ -26,6 +26,7 @@ class AppShell extends StatelessWidget {
   static const _tabs = [
     _NavTab(
         label: 'Dashboard', icon: Icons.dashboard_rounded, route: '/dashboard'),
+    _NavTab(label: 'Leads', icon: Icons.person_search_rounded, route: '/leads'),
     _NavTab(label: 'Clients', icon: Icons.people_rounded, route: '/clients'),
     _NavTab(label: 'Tasks', icon: Icons.check_box_rounded, route: '/tasks'),
     _NavTab(label: 'Projects', icon: Icons.folder_rounded, route: '/projects'),

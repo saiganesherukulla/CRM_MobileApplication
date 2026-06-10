@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:file_picker/file_picker.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -151,6 +152,13 @@ class CrmApi {
     }.contains(_roleKey(_currentUser?.role));
   }
 
+  bool get isClientUser => _roleKey(_currentUser?.role) == 'CLIENT';
+
+  bool get canClientAddClients =>
+      isClientUser && (_currentUser?.subscriptionActive ?? false);
+
+  bool get canCreateClients => !isClientUser || canClientAddClients;
+
   Future<DashboardSummary> dashboard() async {
     return _request<DashboardSummary>(
       '/dashboard/summary',
@@ -165,6 +173,58 @@ class CrmApi {
     return _request<List<Client>>(
       '/clients$suffix',
       parser: (data) => _mapList(data).map(Client.fromJson).toList(),
+    );
+  }
+
+  Future<List<Lead>> leads({String? query}) async {
+    final suffix = query == null || query.trim().isEmpty
+        ? ''
+        : '?q=${Uri.encodeQueryComponent(query.trim())}';
+    return _request<List<Lead>>(
+      '/leads$suffix',
+      parser: (data) => _mapList(data).map(Lead.fromJson).toList(),
+    );
+  }
+
+  Future<Lead> lead(String id) async {
+    return _request<Lead>(
+      '/leads/$id',
+      parser: (data) => Lead.fromJson(_map(data)),
+    );
+  }
+
+  Future<Lead> createLead(Map<String, dynamic> payload) async {
+    return _request<Lead>(
+      '/leads',
+      method: 'POST',
+      body: payload,
+      parser: (data) => Lead.fromJson(_map(data)),
+    );
+  }
+
+  Future<Lead> updateLead(String id, Map<String, dynamic> payload) async {
+    return _request<Lead>(
+      '/leads/$id',
+      method: 'PUT',
+      body: payload,
+      parser: (data) => Lead.fromJson(_map(data)),
+    );
+  }
+
+  Future<void> deleteLead(String id) async {
+    await _request<Map<String, dynamic>>(
+      '/leads/$id',
+      method: 'DELETE',
+      parser: _map,
+    );
+  }
+
+  Future<Client> convertLead(String id, Map<String, dynamic> payload) async {
+    return _request<Client>(
+      '/leads/$id/convert',
+      method: 'POST',
+      body: _clientPayload(payload),
+      parser: (data) => Client.fromJson(_map(data)),
     );
   }
 
@@ -202,7 +262,9 @@ class CrmApi {
   }
 
   Future<Contact> addClientContact(
-      String clientId, Map<String, dynamic> payload) async {
+    String clientId,
+    Map<String, dynamic> payload,
+  ) async {
     return _request<Contact>(
       '/clients/$clientId/contacts',
       method: 'POST',
@@ -331,10 +393,84 @@ class CrmApi {
     );
   }
 
-  Future<Project> addProjectTeamMember(
+  Future<Project> uploadProjectMilestoneDocument(
     String projectId,
-    String member,
+    String milestoneId,
+    PlatformFile file, {
+    bool refreshOnUnauthorized = true,
+  }) async {
+    final request = http.MultipartRequest(
+      'POST',
+      _apiUri('/projects/$projectId/milestones/$milestoneId/documents/upload'),
+    );
+    request.headers['Accept'] = 'application/json';
+    if (_accessToken != null && _accessToken!.isNotEmpty) {
+      request.headers['Authorization'] = 'Bearer $_accessToken';
+    }
+    if (file.bytes != null) {
+      request.files.add(
+        http.MultipartFile.fromBytes('file', file.bytes!, filename: file.name),
+      );
+    } else if (file.path != null && file.path!.isNotEmpty) {
+      request.files.add(await http.MultipartFile.fromPath('file', file.path!));
+    } else {
+      throw ApiException('Selected document could not be read.', 400);
+    }
+
+    final streamed = await request.send();
+    final response = await http.Response.fromStream(streamed);
+    if (response.statusCode == 401 &&
+        refreshOnUnauthorized &&
+        !request.url.path.contains('/auth/')) {
+      final refreshed = await _refreshSession();
+      if (refreshed) {
+        return uploadProjectMilestoneDocument(
+          projectId,
+          milestoneId,
+          file,
+          refreshOnUnauthorized: false,
+        );
+      }
+    }
+    final decoded =
+        response.body.isEmpty ? null : jsonDecode(response.body) as dynamic;
+    final envelope =
+        decoded is Map && decoded.containsKey('success') ? _map(decoded) : null;
+    final success = envelope == null
+        ? response.statusCode < 400
+        : envelope['success'] == true;
+    if (!success || response.statusCode >= 400) {
+      final message = _string(
+        envelope?['message'],
+        response.reasonPhrase ?? 'Upload failed',
+      );
+      throw ApiException(message, response.statusCode);
+    }
+    return Project.fromJson(
+        _map(envelope == null ? decoded : envelope['data']));
+  }
+
+  Future<Project> deleteProjectMilestoneDocument(
+    String projectId,
+    String milestoneId,
+    String documentId,
   ) async {
+    return _request<Project>(
+      '/projects/$projectId/milestones/$milestoneId/documents/$documentId',
+      method: 'DELETE',
+      parser: (data) => Project.fromJson(_map(data)),
+    );
+  }
+
+  String projectMilestoneDocumentDownloadUrl(
+    String projectId,
+    String milestoneId,
+    String documentId,
+  ) {
+    return '$_apiBaseUrl/projects/$projectId/milestones/$milestoneId/documents/$documentId/download';
+  }
+
+  Future<Project> addProjectTeamMember(String projectId, String member) async {
     return _request<Project>(
       '/projects/$projectId/team',
       method: 'POST',
@@ -441,7 +577,9 @@ class CrmApi {
     );
   }
 
-  Future<EmailAccountInfo> saveEmailAccount(Map<String, dynamic> payload) async {
+  Future<EmailAccountInfo> saveEmailAccount(
+    Map<String, dynamic> payload,
+  ) async {
     return _request<EmailAccountInfo>(
       '/email-accounts',
       method: 'POST',
@@ -451,7 +589,8 @@ class CrmApi {
   }
 
   Future<EmailProviderInfo> saveEmailProvider(
-      Map<String, dynamic> payload) async {
+    Map<String, dynamic> payload,
+  ) async {
     return _request<EmailProviderInfo>(
       '/email-providers',
       method: 'POST',
@@ -538,6 +677,60 @@ class CrmApi {
       method: 'POST',
       body: payload,
       parser: (data) => WorkflowItem.fromJson(_map(data)),
+    );
+  }
+
+  Future<WorkflowItem> uploadWorkflowDocument(
+    String id,
+    PlatformFile file, {
+    bool refreshOnUnauthorized = true,
+  }) async {
+    final request = http.MultipartRequest(
+      'POST',
+      _apiUri('/workflows/$id/documents/upload'),
+    );
+    request.headers['Accept'] = 'application/json';
+    if (_accessToken != null && _accessToken!.isNotEmpty) {
+      request.headers['Authorization'] = 'Bearer $_accessToken';
+    }
+    if (file.bytes != null) {
+      request.files.add(
+        http.MultipartFile.fromBytes('file', file.bytes!, filename: file.name),
+      );
+    } else if (file.path != null && file.path!.isNotEmpty) {
+      request.files.add(await http.MultipartFile.fromPath('file', file.path!));
+    } else {
+      throw ApiException('Selected document could not be read.', 400);
+    }
+
+    final streamed = await request.send();
+    final response = await http.Response.fromStream(streamed);
+    if (response.statusCode == 401 && refreshOnUnauthorized) {
+      final refreshed = await _refreshSession();
+      if (refreshed) {
+        return uploadWorkflowDocument(
+          id,
+          file,
+          refreshOnUnauthorized: false,
+        );
+      }
+    }
+    final decoded =
+        response.body.isEmpty ? null : jsonDecode(response.body) as dynamic;
+    final envelope =
+        decoded is Map && decoded.containsKey('success') ? _map(decoded) : null;
+    final success = envelope == null
+        ? response.statusCode < 400
+        : envelope['success'] == true;
+    if (!success || response.statusCode >= 400) {
+      final message = _string(
+        envelope?['message'],
+        response.reasonPhrase ?? 'Document upload failed',
+      );
+      throw ApiException(message, response.statusCode);
+    }
+    return WorkflowItem.fromJson(
+      _map(envelope == null ? decoded : envelope['data']),
     );
   }
 
@@ -678,10 +871,9 @@ class CrmApi {
         ? response.statusCode < 400
         : envelope['success'] == true;
     if (!success || response.statusCode >= 400) {
-      final errors = _map(envelope?['errors'])
-          .values
-          .where((value) => _string(value).isNotEmpty)
-          .join(', ');
+      final errors = _map(
+        envelope?['errors'],
+      ).values.where((value) => _string(value).isNotEmpty).join(', ');
       final message = _string(
         envelope?['message'],
         response.reasonPhrase ?? 'Request failed',
@@ -783,6 +975,7 @@ class CrmApi {
       case 'MANAGER_TEAM_LEAD':
         return const {
           'dashboard',
+          'leads',
           'clients',
           'tasks',
           'projects',
@@ -795,6 +988,7 @@ class CrmApi {
       case 'PROJECT_DELIVERY_USER':
         return const {
           'dashboard',
+          'leads',
           'clients',
           'tasks',
           'projects',
@@ -815,12 +1009,16 @@ class CrmApi {
         };
       case 'VIEWER_AUDITOR':
         return const {'dashboard', 'clients', 'reports'};
+      case 'CLIENT':
+        return const {'dashboard', 'clients', 'projects'};
       default:
         return const {'dashboard'};
     }
   }
 
   String _moduleForRoute(String route) {
+    if (route.startsWith('/more')) return 'more';
+    if (route.startsWith('/leads')) return 'leads';
     if (route.startsWith('/clients')) return 'clients';
     if (route.startsWith('/tasks')) return 'tasks';
     if (route.startsWith('/projects')) return 'projects';

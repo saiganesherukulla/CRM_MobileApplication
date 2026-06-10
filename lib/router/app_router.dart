@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../screens/auth/login_screen.dart';
 import '../screens/dashboard/dashboard_screen.dart';
+import '../screens/leads/leads_screen.dart';
 import '../screens/clients/clients_screen.dart';
 import '../screens/clients/client_detail_screen.dart';
 import '../screens/tasks/tasks_screen.dart';
@@ -34,6 +35,10 @@ final appRouter = GoRouter(
           path: '/dashboard',
           pageBuilder: (context, state) =>
               _slide(state, const DashboardScreen()),
+        ),
+        GoRoute(
+          path: '/leads',
+          pageBuilder: (context, state) => _slide(state, const LeadsScreen()),
         ),
         GoRoute(
           path: '/clients',
@@ -98,11 +103,12 @@ final appRouter = GoRouter(
 );
 
 int _selectedIndex(String path) {
-  if (path.startsWith('/clients')) return 1;
-  if (path.startsWith('/tasks')) return 2;
-  if (path.startsWith('/projects')) return 3;
+  if (path.startsWith('/leads')) return 1;
+  if (path.startsWith('/clients')) return 2;
+  if (path.startsWith('/tasks')) return 3;
+  if (path.startsWith('/projects')) return 4;
   if (path.startsWith('/dashboard')) return 0;
-  return 4;
+  return 5;
 }
 
 CustomTransitionPage<void> _fade<T>(GoRouterState state, Widget child) {

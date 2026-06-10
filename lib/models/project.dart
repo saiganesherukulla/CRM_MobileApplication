@@ -11,6 +11,9 @@ class Project {
   final String dueDate;
   final String owner;
   final String ownerId;
+  final String ownerEmail;
+  final String ownerPhone;
+  final String ownerDesignation;
   final List<String> team;
   final int milestones;
   final int completedMilestones;
@@ -29,6 +32,9 @@ class Project {
     required this.dueDate,
     required this.owner,
     required this.ownerId,
+    required this.ownerEmail,
+    required this.ownerPhone,
+    required this.ownerDesignation,
     required this.team,
     required this.milestones,
     required this.completedMilestones,
@@ -49,11 +55,15 @@ class Project {
       dueDate: _date(json['dueDate']),
       owner: _string(json['owner'], 'Unassigned'),
       ownerId: _string(json['ownerId']),
+      ownerEmail: _string(json['ownerEmail']),
+      ownerPhone: _string(json['ownerPhone']),
+      ownerDesignation: _string(json['ownerDesignation']),
       team: _stringList(json['team']),
       milestones: _int(json['milestones']),
       completedMilestones: _int(json['completedMilestones']),
-      milestoneDetails:
-          _mapList(json['milestoneDetails']).map(ProjectMilestone.fromJson).toList(),
+      milestoneDetails: _mapList(
+        json['milestoneDetails'],
+      ).map(ProjectMilestone.fromJson).toList(),
       budget: _money(json['budget']),
       description: _string(json['description']),
     );
@@ -66,6 +76,7 @@ class ProjectMilestone {
   final String status;
   final String owner;
   final String dueDate;
+  final List<WorkflowDocumentFile> documents;
 
   const ProjectMilestone({
     required this.id,
@@ -73,6 +84,7 @@ class ProjectMilestone {
     required this.status,
     required this.owner,
     required this.dueDate,
+    required this.documents,
   });
 
   factory ProjectMilestone.fromJson(Map<String, dynamic> json) {
@@ -82,6 +94,9 @@ class ProjectMilestone {
       status: _string(json['status'], 'Pending'),
       owner: _string(json['owner'], 'Unassigned'),
       dueDate: _date(json['dueDate']),
+      documents: _mapList(
+        json['documents'],
+      ).map(WorkflowDocumentFile.fromJson).toList(),
     );
   }
 }

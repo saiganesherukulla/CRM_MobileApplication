@@ -1,6 +1,7 @@
 part of 'workflows_screen.dart';
 
 class _FlowRecord {
+  final String projectId;
   final String clientName;
   final String projectName;
   final String status;
@@ -9,6 +10,7 @@ class _FlowRecord {
   final List<WorkflowItem> items;
 
   const _FlowRecord({
+    this.projectId = '',
     required this.clientName,
     required this.projectName,
     required this.status,
@@ -35,6 +37,7 @@ class _FlowRecord {
 
   _FlowRecord copyWith({List<WorkflowItem>? items}) {
     return _FlowRecord(
+      projectId: projectId,
       clientName: clientName,
       projectName: projectName,
       status: status,

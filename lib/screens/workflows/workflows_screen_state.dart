@@ -28,52 +28,74 @@ class _WorkflowsScreenState extends State<WorkflowsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: CrmAppBar(
-        title: 'CRM Flow',
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.add_rounded, color: AppColors.primary),
-            onPressed: () => _showCreateSheet(),
-          ),
-        ],
-      ),
-      body: FutureBuilder<_WorkflowData>(
-        future: _future,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const ApiLoading();
-          }
-          if (snapshot.hasError) {
-            return ApiErrorView(error: snapshot.error, onRetry: _reload);
-          }
-          final records = _recordsFrom(snapshot.data ?? _WorkflowData.empty());
-          if (records.isEmpty) {
-            return const ApiEmpty(
-                'No project flows yet. Add a workflow item to begin.');
-          }
-          return RefreshIndicator(
-            color: AppColors.primary,
-            onRefresh: () async => _reload(),
-            child: ListView.separated(
-              padding: const EdgeInsets.all(16),
-              itemCount: records.length + 1,
-              separatorBuilder: (_, __) => const SizedBox(height: 10),
-              itemBuilder: (context, index) {
-                if (index == 0) {
-                  return const _FlowIntro();
-                }
-                final record = records[index - 1];
-                return _ProjectFlowCard(
-                  record: record,
-                  onTap: () => _openRecord(record),
-                );
-              },
-            ),
+    return FutureBuilder<_WorkflowData>(
+      future: _future,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Scaffold(
+            backgroundColor: AppColors.background,
+            appBar: CrmAppBar(title: 'CRM Flow'),
+            body: ApiLoading(),
           );
-        },
-      ),
+        }
+        if (snapshot.hasError) {
+          return Scaffold(
+            backgroundColor: AppColors.background,
+            appBar: const CrmAppBar(title: 'CRM Flow'),
+            body: ApiErrorView(error: snapshot.error, onRetry: _reload),
+          );
+        }
+        final records = _recordsFrom(snapshot.data ?? _WorkflowData.empty());
+        final projectId =
+            GoRouterState.of(context).uri.queryParameters['projectId'];
+        _FlowRecord? selected;
+        if (projectId != null && projectId.isNotEmpty) {
+          for (final record in records) {
+            if (record.projectId == projectId) {
+              selected = record;
+              break;
+            }
+          }
+        }
+        if (selected != null) {
+          return _ClientFlowScreen(record: selected);
+        }
+        return Scaffold(
+          backgroundColor: AppColors.background,
+          appBar: CrmAppBar(
+            title: 'CRM Flow',
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.add_rounded, color: AppColors.primary),
+                onPressed: () => _showCreateSheet(),
+              ),
+            ],
+          ),
+          body: records.isEmpty
+              ? const ApiEmpty(
+                  'No project flows yet. Add a workflow item to begin.',
+                )
+              : RefreshIndicator(
+                  color: AppColors.primary,
+                  onRefresh: () async => _reload(),
+                  child: ListView.separated(
+                    padding: const EdgeInsets.all(16),
+                    itemCount: records.length + 1,
+                    separatorBuilder: (_, __) => const SizedBox(height: 10),
+                    itemBuilder: (context, index) {
+                      if (index == 0) {
+                        return const _FlowIntro();
+                      }
+                      final record = records[index - 1];
+                      return _ProjectFlowCard(
+                        record: record,
+                        onTap: () => _openRecord(record),
+                      );
+                    },
+                  ),
+                ),
+        );
+      },
     );
   }
 
@@ -90,6 +112,7 @@ class _WorkflowsScreenState extends State<WorkflowsScreen> {
       final client = project.client;
       seenClients.add(client);
       records.add(_FlowRecord(
+        projectId: project.id,
         clientName: client,
         projectName: project.name,
         status: project.status,

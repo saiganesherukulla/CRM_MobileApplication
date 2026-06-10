@@ -5,12 +5,15 @@ class _Field extends StatelessWidget {
   final String hint;
   final TextEditingController controller;
   final TextInputType? keyboardType;
+  final bool obscureText;
 
-  const _Field(
-      {required this.label,
-      required this.hint,
-      required this.controller,
-      this.keyboardType});
+  const _Field({
+    required this.label,
+    required this.hint,
+    required this.controller,
+    this.keyboardType,
+    this.obscureText = false,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -19,18 +22,23 @@ class _Field extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label,
-              style: const TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w500,
-                  color: AppColors.slate700),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis),
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w500,
+              color: AppColors.slate700,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
           const SizedBox(height: 6),
           TextField(
-              controller: controller,
-              keyboardType: keyboardType,
-              decoration: InputDecoration(hintText: hint)),
+            controller: controller,
+            keyboardType: keyboardType,
+            obscureText: obscureText,
+            decoration: InputDecoration(hintText: hint),
+          ),
         ],
       ),
     );
@@ -57,19 +65,24 @@ class _DropdownField extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label,
-              style: const TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w500,
-                  color: AppColors.slate700),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis),
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w500,
+              color: AppColors.slate700,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
           const SizedBox(height: 6),
           DropdownButtonFormField<String>(
             value: value,
             items: options
-                .map((option) =>
-                    DropdownMenuItem(value: option, child: Text(option)))
+                .map(
+                  (option) =>
+                      DropdownMenuItem(value: option, child: Text(option)),
+                )
                 .toList(),
             onChanged: onChanged,
             decoration: const InputDecoration(),

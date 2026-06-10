@@ -10,6 +10,7 @@ class _CreateWorkflowSheetState extends State<_CreateWorkflowSheet> {
   late Future<List<Client>> _clientsFuture;
   late String _stage;
   String? _selectedClientId;
+  List<PlatformFile> _documents = const [];
   bool _saving = false;
   String? _error;
 
@@ -68,7 +69,7 @@ class _CreateWorkflowSheetState extends State<_CreateWorkflowSheet> {
           }
         }
       }
-      await CrmApi.instance.createWorkflow({
+      final created = await CrmApi.instance.createWorkflow({
         'title': _titleCtrl.text.trim(),
         'client': clientName,
         'clientId': clientId,
@@ -84,12 +85,36 @@ class _CreateWorkflowSheetState extends State<_CreateWorkflowSheet> {
             .where((tag) => tag.isNotEmpty)
             .toList(),
       });
+      for (final document in _documents) {
+        await CrmApi.instance.uploadWorkflowDocument(created.id, document);
+      }
       if (mounted) Navigator.pop(context, true);
     } catch (error) {
       if (mounted) setState(() => _error = error.toString());
     } finally {
       if (mounted) setState(() => _saving = false);
     }
+  }
+
+  Future<void> _pickDocuments() async {
+    final result = await FilePicker.platform.pickFiles(
+      allowMultiple: true,
+      type: FileType.custom,
+      allowedExtensions: [
+        'pdf',
+        'doc',
+        'docx',
+        'png',
+        'jpg',
+        'jpeg',
+        'xlsx',
+        'xls',
+        'csv',
+      ],
+      withData: true,
+    );
+    if (result == null || !mounted) return;
+    setState(() => _documents = result.files);
   }
 
   @override
@@ -198,6 +223,24 @@ class _CreateWorkflowSheetState extends State<_CreateWorkflowSheet> {
                 controller: _tagsCtrl,
                 decoration: const InputDecoration(
                     labelText: 'Tags', hintText: 'Comma separated')),
+            const SizedBox(height: 12),
+            OutlinedButton.icon(
+              onPressed: _saving ? null : _pickDocuments,
+              icon: const Icon(Icons.upload_file_rounded, size: 18),
+              label: Text(_documents.isEmpty
+                  ? 'Upload stage documents'
+                  : '${_documents.length} document(s) selected'),
+            ),
+            if (_documents.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              ..._documents.map((document) => Text(
+                    document.name,
+                    style: const TextStyle(
+                        fontSize: 12, color: AppColors.slate500),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  )),
+            ],
             if (_error != null) ...[
               const SizedBox(height: 12),
               Text(_error!,

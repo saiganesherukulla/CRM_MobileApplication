@@ -8,7 +8,6 @@ class _Overview extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final client = summary.client;
-    final canViewFinancials = CrmApi.instance.canViewFinancials();
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
@@ -27,16 +26,13 @@ class _Overview extends StatelessWidget {
             _QuickStat('Projects', summary.projects.length.toString(),
                 AppColors.success),
             const SizedBox(width: 10),
-            if (canViewFinancials)
-              _QuickStat('Service Value', client.revenue, AppColors.primary)
-            else
-              _QuickStat(
-                  'Tickets',
-                  summary.tickets
-                      .where((ticket) => ticket.status != 'Resolved')
-                      .length
-                      .toString(),
-                  AppColors.warning),
+            _QuickStat(
+                'Tickets',
+                summary.tickets
+                    .where((ticket) => ticket.status != 'Resolved')
+                    .length
+                    .toString(),
+                AppColors.warning),
           ],
         ),
         const SizedBox(height: 16),

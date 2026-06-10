@@ -13,6 +13,10 @@ class Client {
   final String country;
   final String website;
   final String notes;
+  final String audience;
+  final String clientTenantId;
+  final String loginUserId;
+  final bool subscriptionActive;
 
   const Client({
     required this.id,
@@ -27,6 +31,10 @@ class Client {
     required this.country,
     required this.website,
     required this.notes,
+    required this.audience,
+    required this.clientTenantId,
+    required this.loginUserId,
+    required this.subscriptionActive,
   });
 
   factory Client.fromJson(Map<String, dynamic> json) {
@@ -44,6 +52,10 @@ class Client {
       country: _string(json['country'], 'Unknown'),
       website: _string(json['website']),
       notes: _string(json['notes']),
+      audience: _string(json['audience'], 'ADMIN'),
+      clientTenantId: _string(json['clientTenantId']),
+      loginUserId: _string(json['loginUserId']),
+      subscriptionActive: json['subscriptionActive'] == true,
     );
   }
 }

@@ -23,7 +23,8 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
       final matchStatus =
           _statusFilter == 'All' || project.status == _statusFilter;
       final query = _search.toLowerCase();
-      final matchSearch = project.name.toLowerCase().contains(query) ||
+      final matchSearch =
+          project.name.toLowerCase().contains(query) ||
           project.client.toLowerCase().contains(query);
       return matchStatus && matchSearch;
     }).toList();
@@ -43,13 +44,17 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
         title: 'Projects',
         actions: [
           IconButton(
-              icon: Icon(
-                  _gridView ? Icons.list_rounded : Icons.grid_view_rounded,
-                  color: AppColors.primary),
-              onPressed: () => setState(() => _gridView = !_gridView)),
-          IconButton(
+            icon: Icon(
+              _gridView ? Icons.list_rounded : Icons.grid_view_rounded,
+              color: AppColors.primary,
+            ),
+            onPressed: () => setState(() => _gridView = !_gridView),
+          ),
+          if (!CrmApi.instance.isClientUser)
+            IconButton(
               icon: const Icon(Icons.add_rounded, color: AppColors.primary),
-              onPressed: _showNewProjectSheet),
+              onPressed: _showNewProjectSheet,
+            ),
         ],
       ),
       body: Column(
@@ -63,45 +68,56 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
                   onChanged: (value) => setState(() => _search = value),
                   decoration: const InputDecoration(
                     hintText: 'Search projects...',
-                    prefixIcon: Icon(Icons.search_rounded,
-                        size: 18, color: AppColors.slate400),
+                    prefixIcon: Icon(
+                      Icons.search_rounded,
+                      size: 18,
+                      color: AppColors.slate400,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 10),
                 SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
                   child: Row(
-                    children: [
-                      'All',
-                      'Active',
-                      'At Risk',
-                      'On Hold',
-                      'Completed'
-                    ].map((status) {
-                      final selected = _statusFilter == status;
-                      return Padding(
-                        padding: const EdgeInsets.only(right: 8),
-                        child: GestureDetector(
-                          onTap: () => setState(() => _statusFilter = status),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 14, vertical: 7),
-                            decoration: BoxDecoration(
-                                color: selected
-                                    ? AppColors.primary
-                                    : AppColors.slate100,
-                                borderRadius: BorderRadius.circular(999)),
-                            child: Text(status,
-                                style: TextStyle(
+                    children:
+                        [
+                          'All',
+                          'Active',
+                          'At Risk',
+                          'On Hold',
+                          'Completed',
+                        ].map((status) {
+                          final selected = _statusFilter == status;
+                          return Padding(
+                            padding: const EdgeInsets.only(right: 8),
+                            child: GestureDetector(
+                              onTap: () =>
+                                  setState(() => _statusFilter = status),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 14,
+                                  vertical: 7,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: selected
+                                      ? AppColors.primary
+                                      : AppColors.slate100,
+                                  borderRadius: BorderRadius.circular(999),
+                                ),
+                                child: Text(
+                                  status,
+                                  style: TextStyle(
                                     fontSize: 12,
                                     fontWeight: FontWeight.w600,
                                     color: selected
                                         ? Colors.white
-                                        : AppColors.slate600)),
-                          ),
-                        ),
-                      );
-                    }).toList(),
+                                        : AppColors.slate600,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          );
+                        }).toList(),
                   ),
                 ),
               ],
@@ -130,15 +146,16 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
                           padding: const EdgeInsets.all(16),
                           gridDelegate:
                               const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 2,
-                            childAspectRatio: 0.78,
-                            crossAxisSpacing: 10,
-                            mainAxisSpacing: 10,
-                          ),
+                                crossAxisCount: 2,
+                                childAspectRatio: 0.78,
+                                crossAxisSpacing: 10,
+                                mainAxisSpacing: 10,
+                              ),
                           itemCount: projects.length,
                           itemBuilder: (_, index) => _ProjectGridCard(
-                              project: projects[index],
-                              progressColor: _progressColor(projects[index])),
+                            project: projects[index],
+                            progressColor: _progressColor(projects[index]),
+                          ),
                         )
                       : ListView.separated(
                           padding: const EdgeInsets.all(16),
@@ -146,8 +163,9 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
                           separatorBuilder: (_, __) =>
                               const SizedBox(height: 10),
                           itemBuilder: (_, index) => _ProjectListCard(
-                              project: projects[index],
-                              progressColor: _progressColor(projects[index])),
+                            project: projects[index],
+                            progressColor: _progressColor(projects[index]),
+                          ),
                         ),
                 );
               },

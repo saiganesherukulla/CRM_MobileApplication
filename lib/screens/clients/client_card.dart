@@ -7,7 +7,6 @@ class _ClientCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final canViewFinancials = CrmApi.instance.canViewFinancials();
     return GestureDetector(
       onTap: () => context.push('/clients/${client.id}'),
       child: Container(
@@ -64,12 +63,12 @@ class _ClientCard extends StatelessWidget {
                           const SizedBox(width: 6),
                           Expanded(
                             child: Text(client.owner,
-                              style: const TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w600,
-                                  color: AppColors.slate700),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis),
+                                style: const TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                    color: AppColors.slate700),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis),
                           ),
                         ],
                       ),
@@ -78,20 +77,10 @@ class _ClientCard extends StatelessWidget {
                 ),
                 const SizedBox(width: 14),
                 SizedBox(
-                  width: canViewFinancials ? 118 : 126,
+                  width: 126,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
-                      Text(canViewFinancials ? client.revenue : 'Internal work',
-                          style: TextStyle(
-                              fontSize: canViewFinancials ? 14 : 12,
-                              fontWeight: FontWeight.w700,
-                              color: canViewFinancials
-                                  ? AppColors.slate800
-                                  : AppColors.slate500),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis),
-                      const SizedBox(height: 2),
                       Text(client.activity,
                           textAlign: TextAlign.end,
                           style: const TextStyle(
