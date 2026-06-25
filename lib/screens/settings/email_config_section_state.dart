@@ -70,9 +70,12 @@ class _EmailConfigSectionState extends State<_EmailConfigSection> {
         text: provider?.displayName ?? templates['zoho']!.$1);
     final clientIdCtrl = TextEditingController(text: provider?.clientId ?? '');
     final secretCtrl = TextEditingController();
-    final redirectCtrl = TextEditingController(
-        text: provider?.redirectUri ??
-            'http://localhost:8080/api/email-accounts/oauth/zoho/callback');
+    const backendUrl = String.fromEnvironment('CRM_BACKEND_URL');
+    final fallbackRedirect = backendUrl.isEmpty
+        ? ''
+        : '$backendUrl/api/email-accounts/oauth/zoho/callback';
+    final redirectCtrl =
+        TextEditingController(text: provider?.redirectUri ?? fallbackRedirect);
     final dataCenterCtrl = TextEditingController(
         text: provider?.dataCenter ?? templates['zoho']!.$2);
     final scopesCtrl = TextEditingController(
@@ -96,8 +99,9 @@ class _EmailConfigSectionState extends State<_EmailConfigSection> {
             displayCtrl.text = template.$1;
             dataCenterCtrl.text = template.$2;
             scopesCtrl.text = template.$3;
-            redirectCtrl.text =
-                'http://localhost:8080/api/email-accounts/oauth/$value/callback';
+            redirectCtrl.text = backendUrl.isEmpty
+                ? ''
+                : '$backendUrl/api/email-accounts/oauth/$value/callback';
             setSheetState(() {});
           }
 

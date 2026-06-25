@@ -15,7 +15,6 @@ dependencies:
 
   # API and secure session helpers
   http: ^1.2.2
-  shared_preferences: ^2.3.2
   file_picker: ^8.1.7
 
   # Charts
@@ -24,6 +23,7 @@ dependencies:
   # UI utilities
   google_fonts: ^6.2.1
   shimmer: ^3.0.0
+  flutter_secure_storage: ^10.3.1
 
 dev_dependencies:
   flutter_test:

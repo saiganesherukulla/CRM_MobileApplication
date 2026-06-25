@@ -1,8 +1,9 @@
 import 'dart:convert';
 
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
-import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/models.dart';
 
@@ -23,10 +24,8 @@ class CrmApi {
   static const _tokenKey = 'crm.accessToken';
   static const _refreshTokenKey = 'crm.refreshToken';
   static const _userKey = 'crm.user';
-  static const _apiBaseUrl = String.fromEnvironment(
-    'CRM_API_BASE_URL',
-    defaultValue: 'http://10.0.2.2:8080/api',
-  );
+  static const _configuredApiBaseUrl = String.fromEnvironment('CRM_API_BASE_URL');
+  static const _secureStorage = FlutterSecureStorage();
 
   static const workflowStages = [
     'Lead Capture',
@@ -62,10 +61,9 @@ class CrmApi {
 
   Future<void> loadSession() async {
     if (_loaded) return;
-    final prefs = await SharedPreferences.getInstance();
-    _accessToken = prefs.getString(_tokenKey);
-    _refreshToken = prefs.getString(_refreshTokenKey);
-    final userJson = prefs.getString(_userKey);
+    _accessToken = await _secureStorage.read(key: _tokenKey);
+    _refreshToken = await _secureStorage.read(key: _refreshTokenKey);
+    final userJson = await _secureStorage.read(key: _userKey);
     if (userJson != null && userJson.isNotEmpty) {
       _currentUser = AuthUser.fromJson(_map(jsonDecode(userJson)));
     }
@@ -929,9 +927,10 @@ class CrmApi {
   }
 
   Uri _apiUri(String path) {
-    final base = _apiBaseUrl.endsWith('/')
-        ? _apiBaseUrl.substring(0, _apiBaseUrl.length - 1)
-        : _apiBaseUrl;
+    final baseUrl = _apiBaseUrl;
+    final base = baseUrl.endsWith('/')
+        ? baseUrl.substring(0, baseUrl.length - 1)
+        : baseUrl;
     return Uri.parse('$base$path');
   }
 
@@ -952,23 +951,34 @@ class CrmApi {
   }
 
   Future<void> _saveAuth(AuthResult result) async {
-    final prefs = await SharedPreferences.getInstance();
     _accessToken = result.accessToken;
     _refreshToken = result.refreshToken;
     _currentUser = result.user;
-    await prefs.setString(_tokenKey, result.accessToken);
-    await prefs.setString(_refreshTokenKey, result.refreshToken);
-    await prefs.setString(_userKey, jsonEncode(result.user.toJson()));
+    await _secureStorage.write(key: _tokenKey, value: result.accessToken);
+    await _secureStorage.write(key: _refreshTokenKey, value: result.refreshToken);
+    await _secureStorage.write(
+      key: _userKey,
+      value: jsonEncode(result.user.toJson()),
+    );
   }
 
   Future<void> _clearLocalSession() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(_tokenKey);
-    await prefs.remove(_refreshTokenKey);
-    await prefs.remove(_userKey);
+    await _secureStorage.delete(key: _tokenKey);
+    await _secureStorage.delete(key: _refreshTokenKey);
+    await _secureStorage.delete(key: _userKey);
     _accessToken = null;
     _refreshToken = null;
     _currentUser = null;
+  }
+
+  String get _apiBaseUrl {
+    if (_configuredApiBaseUrl.isNotEmpty) {
+      return _configuredApiBaseUrl;
+    }
+    if (kReleaseMode) {
+      throw StateError('CRM_API_BASE_URL must be set for release builds.');
+    }
+    return 'http://10.0.2.2:8080/api';
   }
 
   Set<String> _modulesForRole(String role) {
