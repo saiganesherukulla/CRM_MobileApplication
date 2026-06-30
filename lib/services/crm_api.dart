@@ -978,7 +978,7 @@ class CrmApi {
     if (kReleaseMode) {
       throw StateError('CRM_API_BASE_URL must be set for release builds.');
     }
-    return 'http://10.0.2.2:8080/api';
+    return 'https://crmbackendfile.azurewebsites.net/api';
   }
 
   Set<String> _modulesForRole(String role) {
