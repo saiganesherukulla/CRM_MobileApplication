@@ -8,7 +8,10 @@ part 'email_account_info.dart';
 part 'email_provider_info.dart';
 part 'email_sync_result.dart';
 part 'email_message.dart';
+part 'invoice.dart';
 part 'lead.dart';
+part 'lead_document_file.dart';
+part 'lead_timeline_entry.dart';
 
 part 'project.dart';
 part 'role_info.dart';

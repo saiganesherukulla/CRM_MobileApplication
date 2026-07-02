@@ -1,6 +1,6 @@
-# CRM Flutter Mobile App
+# CTRL F Flutter Mobile App
 
-Flutter mobile frontend for the CRM platform. This app uses the same Spring Boot backend as the React web app.
+Flutter mobile frontend for the CTRL F platform. This app uses the same Spring Boot backend as the React web app.
 
 ## Run
 
@@ -84,7 +84,7 @@ Tasks and comments
 Projects and development delivery phases
 Support tickets
 Email accounts, providers, sync, and outbound email records
-CRM flow items and document links
+CTRL F flow items and document links
 Reports and analytics
 Settings, preferences, system status, and audit logs
 ```
@@ -116,6 +116,6 @@ The phone and backend computer must be on the same Wi-Fi for LAN testing. The ba
 - Set the production API URL with `--dart-define=CRM_API_BASE_URL=...`.
 - Configure Android release signing before distributing outside debug testing.
 - Use HTTPS for the backend.
-- Verify login, team member creation, client/contact creation, tasks, tickets, projects, CRM flow, and settings against the production backend.
+- Verify login, team member creation, client/contact creation, tasks, tickets, projects, CTRL F flow, and settings against the production backend.
 - Configure real email provider credentials in the backend or through the admin settings UI.
 - Use a persistent backend file storage location for workflow documents.

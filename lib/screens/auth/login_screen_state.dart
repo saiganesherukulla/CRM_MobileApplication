@@ -144,12 +144,12 @@ class _LoginScreenState extends State<LoginScreen>
         const Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('crm',
+            Text('CTRL F',
                 style: TextStyle(
                     color: Colors.white,
                     fontSize: 20,
                     fontWeight: FontWeight.w800)),
-            Text('Enterprise Edition',
+            Text('Client Operations',
                 style: TextStyle(color: Color(0xFF94A3B8), fontSize: 12)),
           ],
         ),
@@ -177,7 +177,7 @@ class _LoginScreenState extends State<LoginScreen>
                   fontSize: 24,
                   fontWeight: FontWeight.w800)),
           const SizedBox(height: 4),
-          const Text('Sign in to your crm workspace',
+          const Text('Sign in to your CTRL F workspace',
               style: TextStyle(color: Color(0xFF94A3B8), fontSize: 14)),
           if (_error != null) ...[
             const SizedBox(height: 16),
@@ -334,7 +334,7 @@ class _LoginScreenState extends State<LoginScreen>
           const SizedBox(height: 18),
           const Center(
             child: Text(
-              'Use your CRM account credentials. Contact IT support if you need access.',
+              'Use your CTRL F account credentials. Contact IT support if you need access.',
               textAlign: TextAlign.center,
               style: TextStyle(
                   color: Color(0xFF475569), fontSize: 11, height: 1.5),

@@ -36,8 +36,9 @@ class WorkflowItem {
       due: _date(json['due']),
       tags: _stringList(json['tags']),
       stage: _string(json['stage'], 'Lead Capture'),
-      documents:
-          _mapList(json['documents']).map(WorkflowDocumentFile.fromJson).toList(),
+      documents: _mapList(json['documents'])
+          .map(WorkflowDocumentFile.fromJson)
+          .toList(),
     );
   }
 }

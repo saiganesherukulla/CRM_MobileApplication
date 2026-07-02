@@ -12,6 +12,7 @@ import '../../widgets/common/section_card.dart';
 part 'client_detail_screen_state.dart';
 part 'overview.dart';
 part 'contacts.dart';
+part 'timeline.dart';
 part 'tasks.dart';
 part 'projects.dart';
 part 'emails.dart';

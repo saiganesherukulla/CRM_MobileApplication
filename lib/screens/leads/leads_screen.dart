@@ -1,3 +1,7 @@
+import 'dart:typed_data';
+
+import 'package:excel/excel.dart' as xlsx;
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -16,6 +20,14 @@ class LeadsScreen extends StatefulWidget {
 }
 
 class _LeadsScreenState extends State<LeadsScreen> {
+  static const _statusOptions = [
+    'New',
+    'Contacted',
+    'Qualified',
+    'Converted',
+    'Lost'
+  ];
+
   late Future<_LeadData> _future;
   final _searchCtrl = TextEditingController();
   String _search = '';
@@ -62,8 +74,7 @@ class _LeadsScreenState extends State<LeadsScreen> {
       backgroundColor: Colors.transparent,
       builder: (_) => _LeadDetailsSheet(
         lead: lead,
-        hasLiveClient:
-            lead.status == 'Converted' &&
+        hasLiveClient: lead.status == 'Converted' &&
             lead.convertedClientId.isNotEmpty &&
             liveClientIds.contains(lead.convertedClientId),
         onEdit: () async {
@@ -78,6 +89,10 @@ class _LeadsScreenState extends State<LeadsScreen> {
           Navigator.pop(context);
           _showLeadEmailSheet(lead);
         },
+        onStatus: () async {
+          Navigator.pop(context);
+          await _showStatusSheet(lead);
+        },
         onPrimary: () {
           Navigator.pop(context);
           if (lead.status == 'Converted' &&
@@ -90,6 +105,25 @@ class _LeadsScreenState extends State<LeadsScreen> {
         },
       ),
     );
+  }
+
+  Future<void> _showStatusSheet(Lead lead) async {
+    final changed = await showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => _LeadStatusSheet(
+        lead: lead,
+        statuses: _statusOptions,
+      ),
+    );
+    if (changed == true) {
+      _reload();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Lead status updated')),
+      );
+    }
   }
 
   Future<void> _showLeadEmailSheet(Lead lead) async {
@@ -120,6 +154,17 @@ class _LeadsScreenState extends State<LeadsScreen> {
       appBar: CrmAppBar(
         title: 'Leads',
         actions: [
+          IconButton(
+            tooltip: 'Import Excel',
+            icon:
+                const Icon(Icons.upload_file_rounded, color: AppColors.primary),
+            onPressed: _importExcel,
+          ),
+          IconButton(
+            tooltip: 'Sample Excel',
+            icon: const Icon(Icons.download_rounded, color: AppColors.primary),
+            onPressed: _downloadSample,
+          ),
           IconButton(
             icon: const Icon(Icons.add_rounded, color: AppColors.primary),
             onPressed: _showLeadSheet,
@@ -152,9 +197,8 @@ class _LeadsScreenState extends State<LeadsScreen> {
                   return ApiErrorView(error: snapshot.error, onRetry: _reload);
                 }
                 final data = snapshot.data ?? _LeadData.empty();
-                final liveClientIds = data.clients
-                    .map((client) => client.id)
-                    .toSet();
+                final liveClientIds =
+                    data.clients.map((client) => client.id).toSet();
                 final query = _search.toLowerCase();
                 final leads = data.leads.where((lead) {
                   final text =
@@ -196,8 +240,7 @@ class _LeadsScreenState extends State<LeadsScreen> {
                             DataColumn(label: Text('Actions')),
                           ],
                           rows: leads.map((lead) {
-                            final hasLiveClient =
-                                lead.status == 'Converted' &&
+                            final hasLiveClient = lead.status == 'Converted' &&
                                 lead.convertedClientId.isNotEmpty &&
                                 liveClientIds.contains(lead.convertedClientId);
                             return DataRow(
@@ -231,6 +274,28 @@ class _LeadsScreenState extends State<LeadsScreen> {
                                           size: 16,
                                         ),
                                         label: const Text('View'),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      OutlinedButton.icon(
+                                        onPressed: () => context.go(
+                                          '/leads/${lead.id}/timeline',
+                                        ),
+                                        icon: const Icon(
+                                          Icons.timeline_rounded,
+                                          size: 16,
+                                        ),
+                                        label: const Text('Timeline'),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      OutlinedButton.icon(
+                                        onPressed: lead.status == 'Converted'
+                                            ? null
+                                            : () => _showStatusSheet(lead),
+                                        icon: const Icon(
+                                          Icons.edit_note_rounded,
+                                          size: 16,
+                                        ),
+                                        label: const Text('Status'),
                                       ),
                                       const SizedBox(width: 8),
                                       OutlinedButton.icon(
@@ -281,6 +346,106 @@ class _LeadsScreenState extends State<LeadsScreen> {
     );
   }
 
+  Future<void> _downloadSample() async {
+    final excel = xlsx.Excel.createExcel();
+    final sheet = excel['Leads'];
+    sheet.appendRow([
+      xlsx.TextCellValue('Company Name'),
+      xlsx.TextCellValue('Industry'),
+      xlsx.TextCellValue('Country'),
+      xlsx.TextCellValue('Website'),
+      xlsx.TextCellValue('Lead Owner'),
+      xlsx.TextCellValue('Source'),
+      xlsx.TextCellValue('Status'),
+      xlsx.TextCellValue('Contact Name'),
+      xlsx.TextCellValue('Contact Email'),
+      xlsx.TextCellValue('Contact Phone'),
+      xlsx.TextCellValue('Designation'),
+      xlsx.TextCellValue('Notes'),
+    ]);
+    sheet.appendRow([
+      xlsx.TextCellValue('Acme Retail'),
+      xlsx.TextCellValue('Retail'),
+      xlsx.TextCellValue('India'),
+      xlsx.TextCellValue('https://acme.example'),
+      xlsx.TextCellValue(CrmApi.instance.currentUser?.name ?? 'CTRL F User'),
+      xlsx.TextCellValue('Website'),
+      xlsx.TextCellValue('New'),
+      xlsx.TextCellValue('Priya Sharma'),
+      xlsx.TextCellValue('priya@acme.example'),
+      xlsx.TextCellValue('+91 98765 00000'),
+      xlsx.TextCellValue('Purchase Manager'),
+      xlsx.TextCellValue('Interested in CTRL F implementation.'),
+    ]);
+    final bytes = excel.encode();
+    if (bytes == null) return;
+    await FilePicker.platform.saveFile(
+      dialogTitle: 'Save lead sample sheet',
+      fileName: 'lead-sample.xlsx',
+      bytes: Uint8List.fromList(bytes),
+    );
+  }
+
+  Future<void> _importExcel() async {
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: const ['xlsx'],
+      withData: true,
+    );
+    if (result == null || result.files.isEmpty) return;
+    try {
+      final bytes = result.files.first.bytes;
+      if (bytes == null) throw const FormatException('Unable to read file.');
+      final excel = xlsx.Excel.decodeBytes(bytes);
+      xlsx.Sheet? sheet;
+      for (final candidate in excel.tables.values) {
+        if (candidate.rows.length > 1) {
+          sheet = candidate;
+          break;
+        }
+      }
+      if (sheet == null || sheet.rows.length < 2) {
+        throw const FormatException('Sheet has no lead rows.');
+      }
+      final rows = <Map<String, dynamic>>[];
+      for (final row in sheet.rows.skip(1)) {
+        String cell(int index) => index < row.length
+            ? (row[index]?.value?.toString().trim() ?? '')
+            : '';
+        final company = cell(0);
+        if (company.isEmpty) continue;
+        rows.add({
+          'name': company,
+          'industry': cell(1),
+          'country': cell(2),
+          'website': cell(3),
+          'owner': cell(4),
+          'source': cell(5),
+          'status': cell(6).isEmpty ? 'New' : cell(6),
+          'contactName': cell(7),
+          'contactEmail': cell(8),
+          'contactPhone': cell(9),
+          'contactDesignation': cell(10),
+          'notes': cell(11),
+        });
+      }
+      if (rows.isEmpty) throw const FormatException('No valid leads found.');
+      await CrmApi.instance.importLeads(rows);
+      _reload();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('${rows.length} leads imported')),
+        );
+      }
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(error.toString())),
+        );
+      }
+    }
+  }
+
   Widget _cell(String value, {double width = 140, String? subtitle}) {
     final display = value.trim().isEmpty ? '-' : value.trim();
     return SizedBox(
@@ -319,6 +484,7 @@ class _LeadDetailsSheet extends StatelessWidget {
   final VoidCallback onEdit;
   final VoidCallback onDelete;
   final VoidCallback onEmail;
+  final VoidCallback onStatus;
   final VoidCallback onPrimary;
 
   const _LeadDetailsSheet({
@@ -327,6 +493,7 @@ class _LeadDetailsSheet extends StatelessWidget {
     required this.onEdit,
     required this.onDelete,
     required this.onEmail,
+    required this.onStatus,
     required this.onPrimary,
   });
 
@@ -376,7 +543,6 @@ class _LeadDetailsSheet extends StatelessWidget {
                 _detail('Designation', lead.contactDesignation),
                 _detail('Lead Owner', lead.owner),
                 _detail('Source', lead.source),
-
                 _detail(
                   'Duplicate Leads',
                   lead.duplicateLeadIds.isEmpty
@@ -418,6 +584,11 @@ class _LeadDetailsSheet extends StatelessWidget {
                   onPressed: lead.contactEmail.isEmpty ? null : onEmail,
                   icon: const Icon(Icons.mail_outline, size: 16),
                   label: const Text('Email'),
+                ),
+                OutlinedButton.icon(
+                  onPressed: lead.status == 'Converted' ? null : onStatus,
+                  icon: const Icon(Icons.edit_note_rounded, size: 16),
+                  label: const Text('Change Status'),
                 ),
                 ElevatedButton.icon(
                   onPressed: onPrimary,
@@ -463,13 +634,179 @@ class _LeadDetailsSheet extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
-                  color: display == '-'
-                      ? AppColors.slate400
-                      : AppColors.slate700,
+                  color:
+                      display == '-' ? AppColors.slate400 : AppColors.slate700,
                 ),
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _LeadStatusSheet extends StatefulWidget {
+  final Lead lead;
+  final List<String> statuses;
+
+  const _LeadStatusSheet({
+    required this.lead,
+    required this.statuses,
+  });
+
+  @override
+  State<_LeadStatusSheet> createState() => _LeadStatusSheetState();
+}
+
+class _LeadStatusSheetState extends State<_LeadStatusSheet> {
+  late String _status;
+  late final TextEditingController _notesCtrl;
+  bool _saving = false;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _status = widget.statuses.contains(widget.lead.status)
+        ? widget.lead.status
+        : widget.statuses.first;
+    _notesCtrl = TextEditingController(text: _latestNoteFor(_status));
+  }
+
+  @override
+  void dispose() {
+    _notesCtrl.dispose();
+    super.dispose();
+  }
+
+  String _latestNoteFor(String status) {
+    final target = status.toLowerCase();
+    for (final entry in widget.lead.timeline.reversed) {
+      if (entry.status.toLowerCase() == target) return entry.notes;
+    }
+    return '';
+  }
+
+  Future<void> _save() async {
+    final note = _notesCtrl.text.trim();
+    final statusChanged =
+        _status.toLowerCase() != widget.lead.status.toLowerCase();
+    if (statusChanged && note.isEmpty) {
+      setState(() => _error = 'Add a note before changing lead status.');
+      return;
+    }
+    setState(() {
+      _saving = true;
+      _error = null;
+    });
+    try {
+      await CrmApi.instance.addLeadTimeline(
+        widget.lead.id,
+        status: _status,
+        notes: note,
+      );
+      if (mounted) Navigator.pop(context, true);
+    } catch (error) {
+      if (mounted) setState(() => _error = error.toString());
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return DraggableScrollableSheet(
+      initialChildSize: 0.62,
+      maxChildSize: 0.9,
+      builder: (_, scroll) => Container(
+        decoration: const BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: ListView(
+          controller: scroll,
+          padding: const EdgeInsets.all(20),
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Change Lead Status',
+                        style: TextStyle(
+                          fontSize: 17,
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.slate800,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        widget.lead.name,
+                        style: const TextStyle(color: AppColors.slate500),
+                      ),
+                    ],
+                  ),
+                ),
+                CrmBadge(widget.lead.status),
+              ],
+            ),
+            const SizedBox(height: 18),
+            DropdownButtonFormField<String>(
+              value: _status,
+              decoration: const InputDecoration(labelText: 'Status'),
+              items: widget.statuses
+                  .map(
+                    (item) => DropdownMenuItem(value: item, child: Text(item)),
+                  )
+                  .toList(),
+              onChanged: (value) {
+                if (value == null) return;
+                setState(() {
+                  _status = value;
+                  _notesCtrl.text = _latestNoteFor(value);
+                  _error = null;
+                });
+              },
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _notesCtrl,
+              minLines: 4,
+              maxLines: 6,
+              decoration: InputDecoration(
+                labelText: 'Status Note',
+                hintText: _status.toLowerCase() ==
+                        widget.lead.status.toLowerCase()
+                    ? 'Update the note for this status...'
+                    : 'Enter context before moving this lead to $_status...',
+              ),
+            ),
+            if (_error != null) ...[
+              const SizedBox(height: 10),
+              Text(
+                _error!,
+                style: const TextStyle(color: AppColors.error, fontSize: 12),
+              ),
+            ],
+            const SizedBox(height: 20),
+            ElevatedButton.icon(
+              onPressed: _saving ? null : _save,
+              icon: _saving
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    )
+                  : const Icon(Icons.save_rounded, size: 16),
+              label: Text(_saving ? 'Saving...' : 'Save Status'),
+            ),
+          ],
         ),
       ),
     );
@@ -521,7 +858,7 @@ class _LeadEmailSheetState extends State<_LeadEmailSheet> {
       final user = CrmApi.instance.currentUser;
       await CrmApi.instance.sendEmail({
         'to': _toCtrl.text.trim(),
-        'from': user?.name ?? 'CRM User',
+        'from': user?.name ?? 'CTRL F User',
         'fromEmail': user?.email ?? '',
         'client': widget.lead.name,
         'subject': _subjectCtrl.text.trim(),

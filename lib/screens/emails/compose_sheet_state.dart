@@ -30,7 +30,7 @@ class _ComposeSheetState extends State<_ComposeSheet> {
       final user = CrmApi.instance.currentUser;
       await CrmApi.instance.sendEmail({
         'to': _toCtrl.text.trim(),
-        'from': user?.name ?? 'CRM User',
+        'from': user?.name ?? 'CTRL F User',
         'fromEmail': user?.email ?? '',
         'client': _clientCtrl.text.trim(),
         'subject': _subjectCtrl.text.trim(),

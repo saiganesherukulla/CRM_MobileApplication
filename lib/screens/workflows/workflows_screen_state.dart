@@ -34,14 +34,14 @@ class _WorkflowsScreenState extends State<WorkflowsScreen> {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Scaffold(
             backgroundColor: AppColors.background,
-            appBar: CrmAppBar(title: 'CRM Flow'),
+            appBar: CrmAppBar(title: 'CTRL F Flow'),
             body: ApiLoading(),
           );
         }
         if (snapshot.hasError) {
           return Scaffold(
             backgroundColor: AppColors.background,
-            appBar: const CrmAppBar(title: 'CRM Flow'),
+            appBar: const CrmAppBar(title: 'CTRL F Flow'),
             body: ApiErrorView(error: snapshot.error, onRetry: _reload),
           );
         }
@@ -63,7 +63,7 @@ class _WorkflowsScreenState extends State<WorkflowsScreen> {
         return Scaffold(
           backgroundColor: AppColors.background,
           appBar: CrmAppBar(
-            title: 'CRM Flow',
+            title: 'CTRL F Flow',
             actions: [
               IconButton(
                 icon: const Icon(Icons.add_rounded, color: AppColors.primary),
@@ -126,7 +126,7 @@ class _WorkflowsScreenState extends State<WorkflowsScreen> {
       if (seenClients.contains(entry.key)) continue;
       records.add(_FlowRecord(
         clientName: entry.key,
-        projectName: 'General CRM Flow',
+        projectName: 'General CTRL F Flow',
         status: 'Active',
         progress: _progressFor(entry.value),
         dueDate: _latestDue(entry.value),

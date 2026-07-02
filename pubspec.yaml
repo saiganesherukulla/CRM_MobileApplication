@@ -1,5 +1,5 @@
 name: crm
-description: crm mobile application
+description: CTRL F mobile application
 publish_to: 'none'
 version: 1.0.0+1
 
@@ -16,6 +16,7 @@ dependencies:
   # API and secure session helpers
   http: ^1.2.2
   file_picker: ^8.1.7
+  excel: ^4.0.6
 
   # Charts
   fl_chart: ^0.68.0

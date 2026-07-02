@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import '../screens/auth/login_screen.dart';
 import '../screens/dashboard/dashboard_screen.dart';
 import '../screens/leads/leads_screen.dart';
+import '../screens/leads/lead_timeline_screen.dart';
 
 import '../screens/clients/clients_screen.dart';
 import '../screens/clients/client_detail_screen.dart';
@@ -11,12 +12,16 @@ import '../screens/projects/projects_screen.dart';
 import '../screens/emails/emails_screen.dart';
 import '../screens/workflows/workflows_screen.dart';
 import '../screens/tickets/tickets_screen.dart';
+import '../screens/invoices/invoices_screen.dart';
 import '../screens/reports/reports_screen.dart';
+import '../screens/superadmin/super_admin_screen.dart';
+import '../screens/team/team_members_screen.dart';
+import '../screens/custom/custom_screen.dart';
 import '../screens/settings/settings_screen.dart';
 import '../widgets/layout/app_shell.dart';
 
 // ============================================================
-// AppRouter — GoRouter configuration for the CRM app
+// AppRouter — GoRouter configuration for the CTRL F app
 // ============================================================
 
 final appRouter = GoRouter(
@@ -38,6 +43,15 @@ final appRouter = GoRouter(
         GoRoute(
           path: '/leads',
           pageBuilder: (context, state) => _slide(state, const LeadsScreen()),
+          routes: [
+            GoRoute(
+              path: ':id/timeline',
+              pageBuilder: (context, state) => _slide(
+                state,
+                LeadTimelineScreen(leadId: state.pathParameters['id']!),
+              ),
+            ),
+          ],
         ),
         GoRoute(
           path: '/clients',
@@ -52,7 +66,6 @@ final appRouter = GoRouter(
             ),
           ],
         ),
-
         GoRoute(
           path: '/tasks',
           pageBuilder: (context, state) => _slide(state, const TasksScreen()),
@@ -89,8 +102,27 @@ final appRouter = GoRouter(
           pageBuilder: (context, state) => _slide(state, const TicketsScreen()),
         ),
         GoRoute(
+          path: '/invoices',
+          pageBuilder: (context, state) =>
+              _slide(state, const InvoicesScreen()),
+        ),
+        GoRoute(
           path: '/reports',
           pageBuilder: (context, state) => _slide(state, const ReportsScreen()),
+        ),
+        GoRoute(
+          path: '/super-admin',
+          pageBuilder: (context, state) =>
+              _slide(state, const SuperAdminScreen()),
+        ),
+        GoRoute(
+          path: '/team-members',
+          pageBuilder: (context, state) =>
+              _slide(state, const TeamMembersScreen()),
+        ),
+        GoRoute(
+          path: '/custom',
+          pageBuilder: (context, state) => _slide(state, const CustomScreen()),
         ),
         GoRoute(
           path: '/settings',

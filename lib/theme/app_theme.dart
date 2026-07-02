@@ -4,7 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 part 'app_theme_2.dart';
 
 // ============================================================
-// CRM App Theme
+// CTRL F App Theme
 // ============================================================
 
 class AppColors {

@@ -41,28 +41,32 @@ class AppShell extends StatelessWidget {
     final path = GoRouterState.of(context).uri.path;
     final activeIndex =
         visibleTabs.indexWhere((tab) => path.startsWith(tab.route));
-    final selected = activeIndex < 0
-        ? selectedIndex.clamp(0, visibleTabs.length - 1).toInt()
-        : activeIndex;
+    final selected = visibleTabs.isEmpty
+        ? 0
+        : activeIndex < 0
+            ? selectedIndex.clamp(0, visibleTabs.length - 1).toInt()
+            : activeIndex;
     return Scaffold(
       body: child,
-      bottomNavigationBar: Container(
-        decoration: const BoxDecoration(
-          color: AppColors.surface,
-          border: Border(top: BorderSide(color: AppColors.slate100)),
-        ),
-        child: NavigationBar(
-          selectedIndex: selected,
-          onDestinationSelected: (i) => context.go(visibleTabs[i].route),
-          destinations: visibleTabs
-              .map((t) => NavigationDestination(
-                    icon: Icon(t.icon),
-                    selectedIcon: Icon(t.icon),
-                    label: t.label,
-                  ))
-              .toList(),
-        ),
-      ),
+      bottomNavigationBar: visibleTabs.length < 2
+          ? null
+          : Container(
+              decoration: const BoxDecoration(
+                color: AppColors.surface,
+                border: Border(top: BorderSide(color: AppColors.slate100)),
+              ),
+              child: NavigationBar(
+                selectedIndex: selected,
+                onDestinationSelected: (i) => context.go(visibleTabs[i].route),
+                destinations: visibleTabs
+                    .map((t) => NavigationDestination(
+                          icon: Icon(t.icon),
+                          selectedIcon: Icon(t.icon),
+                          label: t.label,
+                        ))
+                    .toList(),
+              ),
+            ),
     );
   }
 }

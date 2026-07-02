@@ -25,14 +25,15 @@ class _ProfileSectionState extends State<_ProfileSection> {
     super.initState();
     final user = CrmApi.instance.currentUser;
     final parts = (user?.name ?? '').split(' ');
-    _firstNameCtrl = TextEditingController(text: parts.isNotEmpty ? parts.first : '');
+    _firstNameCtrl =
+        TextEditingController(text: parts.isNotEmpty ? parts.first : '');
     _lastNameCtrl = TextEditingController(
         text: parts.length > 1 ? parts.sublist(1).join(' ') : '');
     _emailCtrl = TextEditingController(text: user?.email ?? '');
     _roleCtrl = TextEditingController(text: user?.role ?? '');
-    _phoneCtrl = TextEditingController();
-    _titleCtrl = TextEditingController(text: user?.role ?? '');
-    _departmentCtrl = TextEditingController();
+    _phoneCtrl = TextEditingController(text: user?.phone ?? '');
+    _titleCtrl = TextEditingController(text: user?.title ?? '');
+    _departmentCtrl = TextEditingController(text: user?.department ?? '');
   }
 
   @override
@@ -67,6 +68,7 @@ class _ProfileSectionState extends State<_ProfileSection> {
         'department': _departmentCtrl.text.trim(),
         'status': 'Active',
       });
+      await CrmApi.instance.refreshCurrentUser();
       widget.onChanged();
       if (mounted) _showInfo(context, 'Profile saved.');
     } catch (error) {

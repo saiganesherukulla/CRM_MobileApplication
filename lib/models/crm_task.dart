@@ -82,7 +82,7 @@ class TaskComment {
     return TaskComment(
       id: _string(json['id']),
       message: _string(json['message']),
-      author: _string(json['author'], 'CRM User'),
+      author: _string(json['author'], 'CTRL F User'),
       authorId: _string(json['authorId']),
       createdAt: _date(json['createdAt']),
     );

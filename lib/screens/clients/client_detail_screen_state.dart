@@ -5,6 +5,7 @@ class _ClientDetailScreenState extends State<ClientDetailScreen>
   static const _tabs = [
     'Overview',
     'Contacts',
+    'Timeline',
     'Tasks',
     'Projects',
     'Emails',
@@ -58,7 +59,7 @@ class _ClientDetailScreenState extends State<ClientDetailScreen>
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Delete client?'),
-        content: Text('This will remove ${client.name} from the CRM.'),
+        content: Text('This will remove ${client.name} from CTRL F.'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -206,6 +207,7 @@ class _ClientDetailScreenState extends State<ClientDetailScreen>
                 children: [
                   _Overview(summary: summary),
                   _Contacts(contacts: summary.contacts),
+                  _Timeline(summary: summary),
                   _Tasks(tasks: summary.tasks),
                   _Projects(projects: summary.projects),
                   _Emails(emails: summary.emails),
@@ -255,9 +257,8 @@ class _EditClientSheetState extends State<_EditClientSheet> {
         break;
       }
     }
-    primary ??= widget.summary.contacts.isEmpty
-        ? null
-        : widget.summary.contacts.first;
+    primary ??=
+        widget.summary.contacts.isEmpty ? null : widget.summary.contacts.first;
     _nameCtrl = TextEditingController(text: client.name);
     _industryCtrl = TextEditingController(text: client.industry);
     _countryCtrl = TextEditingController(text: client.country);

@@ -65,7 +65,7 @@ class _CreateWorkflowSheetState extends State<_CreateWorkflowSheet> {
             clientId = client.id;
             clientName = client.name;
           } catch (_) {
-            // CRM flow can still record a lead name before the full client profile is created.
+            // CTRL F flow can still record a lead name before the full client profile is created.
           }
         }
       }

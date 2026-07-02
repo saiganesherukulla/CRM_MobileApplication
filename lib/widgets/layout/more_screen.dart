@@ -7,7 +7,12 @@ class MoreScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final modules = [
       _Module('Emails', Icons.mail_rounded, '/emails', AppColors.primaryLight),
-
+      _Module(
+        'Workflows',
+        Icons.account_tree_rounded,
+        '/workflows',
+        AppColors.info,
+      ),
       _Module(
         'Tickets',
         Icons.confirmation_number_rounded,
@@ -15,10 +20,34 @@ class MoreScreen extends StatelessWidget {
         AppColors.warning,
       ),
       _Module(
+        'Invoices',
+        Icons.receipt_long_rounded,
+        '/invoices',
+        AppColors.success,
+      ),
+      _Module(
         'Reports',
         Icons.bar_chart_rounded,
         '/reports',
         AppColors.success,
+      ),
+      _Module(
+        'Super Admin',
+        Icons.admin_panel_settings_rounded,
+        '/super-admin',
+        AppColors.primary,
+      ),
+      _Module(
+        'Team Members',
+        Icons.group_add_rounded,
+        '/team-members',
+        AppColors.info,
+      ),
+      _Module(
+        'Custom',
+        Icons.tune_rounded,
+        '/custom',
+        AppColors.warning,
       ),
       _Module(
         'Settings',

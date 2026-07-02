@@ -39,7 +39,8 @@ class _TicketDetailSheetState extends State<_TicketDetailSheet> {
       _error = null;
     });
     try {
-      final updated = await CrmApi.instance.updateTicketStatus(_ticket.id, status);
+      final updated =
+          await CrmApi.instance.updateTicketStatus(_ticket.id, status);
       if (mounted) setState(() => _ticket = updated);
     } catch (error) {
       if (mounted) setState(() => _error = error.toString());
@@ -89,8 +90,12 @@ class _TicketDetailSheetState extends State<_TicketDetailSheet> {
         title: const Text('Delete ticket?'),
         content: Text(_ticket.title),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
-          TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('Delete')),
+          TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Cancel')),
+          TextButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('Delete')),
         ],
       ),
     );
@@ -135,8 +140,7 @@ class _TicketDetailSheetState extends State<_TicketDetailSheet> {
                         style: const TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w700,
-                            color: AppColors.slate400,
-                            fontFamily: 'monospace')),
+                            color: AppColors.slate400)),
                     const SizedBox(width: 8),
                     Container(
                       padding: const EdgeInsets.symmetric(
@@ -188,8 +192,12 @@ class _TicketDetailSheetState extends State<_TicketDetailSheet> {
                   Wrap(
                     spacing: 8,
                     runSpacing: 8,
-                    children: ['Open', 'In Progress', 'Waiting for Client', 'Resolved']
-                        .map((status) {
+                    children: [
+                      'Open',
+                      'In Progress',
+                      'Waiting for Client',
+                      'Resolved'
+                    ].map((status) {
                       final selected = ticket.status == status;
                       return GestureDetector(
                         onTap: _saving ? null : () => _changeStatus(status),

@@ -22,7 +22,7 @@ class _EmailThreadScreenState extends State<_EmailThreadScreen> {
       final user = CrmApi.instance.currentUser;
       await CrmApi.instance.sendEmail({
         'to': widget.email.fromEmail,
-        'from': user?.name ?? 'CRM User',
+        'from': user?.name ?? 'CTRL F User',
         'fromEmail': user?.email ?? '',
         'client': widget.email.client,
         'subject': widget.email.subject.startsWith('Re:')
@@ -51,8 +51,12 @@ class _EmailThreadScreenState extends State<_EmailThreadScreen> {
         title: const Text('Delete email?'),
         content: Text(widget.email.subject),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
-          TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('Delete')),
+          TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Cancel')),
+          TextButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('Delete')),
         ],
       ),
     );

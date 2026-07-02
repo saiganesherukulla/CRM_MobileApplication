@@ -15,6 +15,8 @@ class Lead {
   final String source;
 
   final List<String> duplicateLeadIds;
+  final List<LeadTimelineEntry> timeline;
+  final List<LeadDocumentFile> documents;
   final String notes;
   final String convertedClientId;
   final String createdAt;
@@ -33,8 +35,9 @@ class Lead {
     required this.contactPhone,
     required this.contactDesignation,
     required this.source,
-
     required this.duplicateLeadIds,
+    required this.timeline,
+    required this.documents,
     required this.notes,
     required this.convertedClientId,
     required this.createdAt,
@@ -55,8 +58,11 @@ class Lead {
       contactPhone: _string(json['contactPhone']),
       contactDesignation: _string(json['contactDesignation']),
       source: _string(json['source']),
-
       duplicateLeadIds: _stringList(json['duplicateLeadIds']),
+      timeline:
+          _mapList(json['timeline']).map(LeadTimelineEntry.fromJson).toList(),
+      documents:
+          _mapList(json['documents']).map(LeadDocumentFile.fromJson).toList(),
       notes: _string(json['notes']),
       convertedClientId: _string(json['convertedClientId']),
       createdAt: _string(json['createdAt']),

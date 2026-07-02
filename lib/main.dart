@@ -5,7 +5,7 @@ import 'router/app_router.dart';
 import 'services/crm_api.dart';
 
 // ============================================================
-// Entry point - crm mobile app
+// Entry point - CTRL F mobile app
 // ============================================================
 
 Future<void> main() async {
@@ -27,7 +27,7 @@ class CrmApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp.router(
-      title: 'crm',
+      title: 'CTRL F',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light,
       routerConfig: appRouter,

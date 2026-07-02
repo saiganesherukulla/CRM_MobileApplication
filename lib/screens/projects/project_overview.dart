@@ -69,7 +69,7 @@ class _ProjectOverview extends StatelessWidget {
                   SizedBox(width: 12),
                   Expanded(
                     child: Text(
-                      'CRM Flow',
+                      'CTRL F Flow',
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w700,

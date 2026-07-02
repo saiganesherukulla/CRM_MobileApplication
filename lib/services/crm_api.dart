@@ -24,7 +24,8 @@ class CrmApi {
   static const _tokenKey = 'crm.accessToken';
   static const _refreshTokenKey = 'crm.refreshToken';
   static const _userKey = 'crm.user';
-  static const _configuredApiBaseUrl = String.fromEnvironment('CRM_API_BASE_URL');
+  static const _configuredApiBaseUrl =
+      String.fromEnvironment('CRM_API_BASE_URL');
   static const _secureStorage = FlutterSecureStorage();
 
   static const workflowStages = [
@@ -33,7 +34,6 @@ class CrmApi {
     'Lead Assignment',
     'Initial Contact',
     'Requirement Discovery',
-
     'Proposal / Quotation',
     'Negotiation & Revision',
     'Approval Decision',
@@ -107,6 +107,20 @@ class CrmApi {
     return result;
   }
 
+  Future<AuthUser> me() async {
+    return _request<AuthUser>(
+      '/auth/me',
+      parser: (data) => AuthUser.fromJson(_map(data)),
+    );
+  }
+
+  Future<AuthUser> refreshCurrentUser() async {
+    final user = await me();
+    _currentUser = user;
+    await _secureStorage.write(key: _userKey, value: jsonEncode(user.toJson()));
+    return user;
+  }
+
   Future<void> signOut() async {
     final refreshToken = _refreshToken;
     if (refreshToken != null && refreshToken.isNotEmpty) {
@@ -135,6 +149,8 @@ class CrmApi {
   bool canViewFinancials() {
     return {
       'SUPER_ADMIN',
+      'SUPERADMIN',
+      'ADMIN',
       'MANAGEMENT_FOUNDER',
       'FOUNDER',
     }.contains(_roleKey(_currentUser?.role));
@@ -143,12 +159,30 @@ class CrmApi {
   bool canManageTeam() {
     return {
       'SUPER_ADMIN',
+      'SUPERADMIN',
+      'ADMIN',
       'MANAGEMENT_FOUNDER',
       'FOUNDER',
       'OPERATIONS_ADMIN',
       'MANAGER_TEAM_LEAD',
     }.contains(_roleKey(_currentUser?.role));
   }
+
+  bool canManageCustomizations() {
+    return {
+      'SUPER_ADMIN',
+      'SUPERADMIN',
+      'ADMIN',
+      'MANAGEMENT_FOUNDER',
+      'FOUNDER',
+      'OPERATIONS_ADMIN',
+    }.contains(_roleKey(_currentUser?.role));
+  }
+
+  bool get isSuperAdmin => {
+        'SUPER_ADMIN',
+        'SUPERADMIN',
+      }.contains(_roleKey(_currentUser?.role));
 
   bool get isClientUser => _roleKey(_currentUser?.role) == 'CLIENT';
 
@@ -191,6 +225,15 @@ class CrmApi {
     );
   }
 
+  Future<List<Lead>> importLeads(List<Map<String, dynamic>> payload) async {
+    return _request<List<Lead>>(
+      '/leads/batch',
+      method: 'POST',
+      body: payload,
+      parser: (data) => _mapList(data).map(Lead.fromJson).toList(),
+    );
+  }
+
   Future<Lead> createLead(Map<String, dynamic> payload) async {
     return _request<Lead>(
       '/leads',
@@ -209,9 +252,109 @@ class CrmApi {
     );
   }
 
+  Future<Lead> addLeadTimeline(
+    String id, {
+    required String status,
+    required String notes,
+  }) async {
+    return _request<Lead>(
+      '/leads/$id/timeline',
+      method: 'POST',
+      body: {'status': status, 'notes': notes},
+      parser: (data) => Lead.fromJson(_map(data)),
+    );
+  }
+
+  Future<Lead> uploadLeadTimelineDocument(
+    String id,
+    String status,
+    PlatformFile file, {
+    bool refreshOnUnauthorized = true,
+  }) async {
+    final request = http.MultipartRequest(
+      'POST',
+      _apiUri('/leads/$id/timeline/documents/upload'),
+    );
+    request.headers['Accept'] = 'application/json';
+    request.fields['status'] = status;
+    if (_accessToken != null && _accessToken!.isNotEmpty) {
+      request.headers['Authorization'] = 'Bearer $_accessToken';
+    }
+    if (file.bytes != null) {
+      request.files.add(
+        http.MultipartFile.fromBytes('file', file.bytes!, filename: file.name),
+      );
+    } else if (file.path != null && file.path!.isNotEmpty) {
+      request.files.add(await http.MultipartFile.fromPath('file', file.path!));
+    } else {
+      throw ApiException('Selected document could not be read.', 400);
+    }
+    final response = await http.Response.fromStream(await request.send());
+    if (response.statusCode == 401 && refreshOnUnauthorized) {
+      final refreshed = await _refreshSession();
+      if (refreshed) {
+        return uploadLeadTimelineDocument(
+          id,
+          status,
+          file,
+          refreshOnUnauthorized: false,
+        );
+      }
+    }
+    final decoded =
+        response.body.isEmpty ? null : jsonDecode(response.body) as dynamic;
+    final envelope =
+        decoded is Map && decoded.containsKey('success') ? _map(decoded) : null;
+    final success = envelope == null
+        ? response.statusCode < 400
+        : envelope['success'] == true;
+    if (!success || response.statusCode >= 400) {
+      throw ApiException(
+        _string(envelope?['message'], response.reasonPhrase ?? 'Upload failed'),
+        response.statusCode,
+      );
+    }
+    return Lead.fromJson(_map(envelope == null ? decoded : envelope['data']));
+  }
+
   Future<void> deleteLead(String id) async {
     await _request<Map<String, dynamic>>(
       '/leads/$id',
+      method: 'DELETE',
+      parser: _map,
+    );
+  }
+
+  Future<List<Invoice>> invoices({String? query}) async {
+    final suffix = query == null || query.trim().isEmpty
+        ? ''
+        : '?q=${Uri.encodeQueryComponent(query.trim())}';
+    return _request<List<Invoice>>(
+      '/invoices$suffix',
+      parser: (data) => _mapList(data).map(Invoice.fromJson).toList(),
+    );
+  }
+
+  Future<Invoice> invoice(String id) async {
+    return _request<Invoice>(
+      '/invoices/$id',
+      parser: (data) => Invoice.fromJson(_map(data)),
+    );
+  }
+
+  Future<Invoice> saveInvoice(Map<String, dynamic> payload,
+      {String? id}) async {
+    return _request<Invoice>(
+      id == null ? '/invoices' : '/invoices/$id',
+      method: id == null ? 'POST' : 'PUT',
+      body: payload,
+      parser: (data) => Invoice.fromJson(_map(data)),
+    );
+  }
+
+  Future<void> deleteInvoice(String id) async {
+    await _request<Map<String, dynamic>>(
+      '/invoices/$id',
       method: 'DELETE',
       parser: _map,
     );
@@ -270,8 +413,6 @@ class CrmApi {
       parser: (data) => Contact.fromJson(_map(data)),
     );
   }
-
-
 
   Future<List<CrmTask>> tasks() async {
     return _request<List<CrmTask>>(
@@ -432,12 +573,10 @@ class CrmApi {
         );
       }
     }
-    final decoded = response.body.isEmpty
-        ? null
-        : jsonDecode(response.body) as dynamic;
-    final envelope = decoded is Map && decoded.containsKey('success')
-        ? _map(decoded)
-        : null;
+    final decoded =
+        response.body.isEmpty ? null : jsonDecode(response.body) as dynamic;
+    final envelope =
+        decoded is Map && decoded.containsKey('success') ? _map(decoded) : null;
     final success = envelope == null
         ? response.statusCode < 400
         : envelope['success'] == true;
@@ -714,12 +853,10 @@ class CrmApi {
         return uploadWorkflowDocument(id, file, refreshOnUnauthorized: false);
       }
     }
-    final decoded = response.body.isEmpty
-        ? null
-        : jsonDecode(response.body) as dynamic;
-    final envelope = decoded is Map && decoded.containsKey('success')
-        ? _map(decoded)
-        : null;
+    final decoded =
+        response.body.isEmpty ? null : jsonDecode(response.body) as dynamic;
+    final envelope =
+        decoded is Map && decoded.containsKey('success') ? _map(decoded) : null;
     final success = envelope == null
         ? response.statusCode < 400
         : envelope['success'] == true;
@@ -768,12 +905,34 @@ class CrmApi {
     return summary.copyWith(emailProviders: providers);
   }
 
+  Future<List<TeamMember>> users() async {
+    return _request<List<TeamMember>>(
+      '/users',
+      parser: (data) => _mapList(data).map(TeamMember.fromJson).toList(),
+    );
+  }
+
   Future<TeamMember> saveUser(Map<String, dynamic> payload) async {
     return _request<TeamMember>(
       '/users',
       method: 'POST',
       body: payload,
       parser: (data) => TeamMember.fromJson(_map(data)),
+    );
+  }
+
+  Future<void> deleteUser(String id) async {
+    await _request<Map<String, dynamic>>(
+      '/users/$id',
+      method: 'DELETE',
+      parser: _map,
+    );
+  }
+
+  Future<List<RoleInfo>> roles() async {
+    return _request<List<RoleInfo>>(
+      '/roles',
+      parser: (data) => _mapList(data).map(RoleInfo.fromJson).toList(),
     );
   }
 
@@ -786,12 +945,35 @@ class CrmApi {
     );
   }
 
+  Future<void> deleteRole(String id) async {
+    await _request<Map<String, dynamic>>(
+      '/roles/$id',
+      method: 'DELETE',
+      parser: _map,
+    );
+  }
+
+  Future<List<DepartmentInfo>> departments() async {
+    return _request<List<DepartmentInfo>>(
+      '/departments',
+      parser: (data) => _mapList(data).map(DepartmentInfo.fromJson).toList(),
+    );
+  }
+
   Future<DepartmentInfo> saveDepartment(Map<String, dynamic> payload) async {
     return _request<DepartmentInfo>(
       '/departments',
       method: 'POST',
       body: payload,
       parser: (data) => DepartmentInfo.fromJson(_map(data)),
+    );
+  }
+
+  Future<void> deleteDepartment(String id) async {
+    await _request<Map<String, dynamic>>(
+      '/departments/$id',
+      method: 'DELETE',
+      parser: _map,
     );
   }
 
@@ -844,7 +1026,7 @@ class CrmApi {
   Future<T> _request<T>(
     String path, {
     String method = 'GET',
-    Map<String, dynamic>? body,
+    Object? body,
     required T Function(dynamic data) parser,
     bool refreshOnUnauthorized = true,
   }) async {
@@ -864,12 +1046,10 @@ class CrmApi {
       }
     }
 
-    final decoded = response.body.isEmpty
-        ? null
-        : jsonDecode(response.body) as dynamic;
-    final envelope = decoded is Map && decoded.containsKey('success')
-        ? _map(decoded)
-        : null;
+    final decoded =
+        response.body.isEmpty ? null : jsonDecode(response.body) as dynamic;
+    final envelope =
+        decoded is Map && decoded.containsKey('success') ? _map(decoded) : null;
     final success = envelope == null
         ? response.statusCode < 400
         : envelope['success'] == true;
@@ -892,7 +1072,7 @@ class CrmApi {
   Future<http.Response> _send(
     String path, {
     String method = 'GET',
-    Map<String, dynamic>? body,
+    Object? body,
   }) async {
     final request = http.Request(method, _apiUri(path));
     request.headers['Accept'] = 'application/json';
@@ -943,8 +1123,7 @@ class CrmApi {
           payload['primaryContactEmail'] ?? payload['contactEmail'],
       'primaryContactPhone':
           payload['primaryContactPhone'] ?? payload['contactPhone'],
-      'primaryContactDesignation':
-          payload['primaryContactDesignation'] ??
+      'primaryContactDesignation': payload['primaryContactDesignation'] ??
           payload['contactDesignation'] ??
           'Primary Contact',
     };
@@ -955,7 +1134,8 @@ class CrmApi {
     _refreshToken = result.refreshToken;
     _currentUser = result.user;
     await _secureStorage.write(key: _tokenKey, value: result.accessToken);
-    await _secureStorage.write(key: _refreshTokenKey, value: result.refreshToken);
+    await _secureStorage.write(
+        key: _refreshTokenKey, value: result.refreshToken);
     await _secureStorage.write(
       key: _userKey,
       value: jsonEncode(result.user.toJson()),
@@ -984,6 +1164,8 @@ class CrmApi {
   Set<String> _modulesForRole(String role) {
     switch (_roleKey(role)) {
       case 'SUPER_ADMIN':
+      case 'SUPERADMIN':
+      case 'ADMIN':
       case 'MANAGEMENT_FOUNDER':
       case 'FOUNDER':
       case 'OPERATIONS_ADMIN':
@@ -1001,6 +1183,19 @@ class CrmApi {
           'tickets',
           'reports',
           'settings',
+          'more',
+        };
+      case 'EMPLOYEE':
+        return const {
+          'dashboard',
+          'leads',
+          'clients',
+          'tasks',
+          'projects',
+          'emails',
+          'workflows',
+          'tickets',
+          'more',
         };
       case 'PROJECT_DELIVERY_USER':
         return const {
@@ -1012,9 +1207,17 @@ class CrmApi {
           'projects',
           'emails',
           'workflows',
+          'more',
         };
       case 'SUPPORT_USER':
-        return const {'dashboard', 'clients', 'tasks', 'emails', 'tickets'};
+        return const {
+          'dashboard',
+          'clients',
+          'tasks',
+          'emails',
+          'tickets',
+          'more',
+        };
       case 'FINANCE_BILLING_USER':
         return const {
           'dashboard',
@@ -1024,9 +1227,10 @@ class CrmApi {
           'emails',
           'workflows',
           'reports',
+          'more',
         };
       case 'VIEWER_AUDITOR':
-        return const {'dashboard', 'clients', 'reports'};
+        return const {'dashboard', 'clients', 'reports', 'more'};
       case 'CLIENT':
         return const {'dashboard', 'clients', 'projects'};
       default:
@@ -1044,7 +1248,11 @@ class CrmApi {
     if (route.startsWith('/emails')) return 'emails';
     if (route.startsWith('/workflows')) return 'workflows';
     if (route.startsWith('/tickets')) return 'tickets';
+    if (route.startsWith('/invoices')) return 'invoices';
     if (route.startsWith('/reports')) return 'reports';
+    if (route.startsWith('/super-admin')) return 'super-admin';
+    if (route.startsWith('/team-members')) return 'team-members';
+    if (route.startsWith('/custom')) return 'custom';
     if (route.startsWith('/settings')) return 'settings';
     return 'dashboard';
   }

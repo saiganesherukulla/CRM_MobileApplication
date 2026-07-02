@@ -26,7 +26,7 @@ class _FlowIntro extends StatelessWidget {
                         fontWeight: FontWeight.w700,
                         color: AppColors.slate800)),
                 SizedBox(height: 2),
-                Text('Open a project to view and edit its CRM journey.',
+                Text('Open a project to view and edit its CTRL F journey.',
                     style: TextStyle(fontSize: 12, color: AppColors.slate400)),
               ],
             ),

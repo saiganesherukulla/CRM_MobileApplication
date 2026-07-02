@@ -31,8 +31,7 @@ class _TicketCard extends StatelessWidget {
                     style: const TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w700,
-                        color: AppColors.slate400,
-                        fontFamily: 'monospace')),
+                        color: AppColors.slate400)),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Align(
